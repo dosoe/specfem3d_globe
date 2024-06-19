@@ -175,6 +175,29 @@
   ! and sets radius for each discontinuity and ocean density values
   call get_model_parameters()
 
+  ! <FM> - Print initialized options on terminal 
+  WRITE(*,*)'=================================================='
+  WRITE(*,*)'SUPPRESS_CRUSTAL_MESH', SUPPRESS_CRUSTAL_MESH
+  WRITE(*,*)'ONE_CRUST', ONE_CRUST
+  WRITE(*,*)'CRUSTAL', CRUSTAL
+  WRITE(*,*)'HONOR_1D_SPHERICAL_MOHO', HONOR_1D_SPHERICAL_MOHO
+  WRITE(*,*)'OCEANS', OCEANS
+  WRITE(*,*)'------------------------------------------------'
+  WRITE(*,*)'ROCEAN',ROCEAN
+  WRITE(*,*)'RMIDDLE_CRUST',RMIDDLE_CRUST
+  WRITE(*,*)'RMOHO',RMOHO
+  WRITE(*,*)'R80',R80
+  WRITE(*,*)'R120',R120
+  WRITE(*,*)'R220',R220
+  WRITE(*,*)'R400',R400
+  WRITE(*,*)'R600',R600
+  WRITE(*,*)'R670',R670
+  WRITE(*,*)'R771',R771
+  WRITE(*,*)'RMOHO_FICTITIOUS_IN_MESHER',RMOHO_FICTITIOUS_IN_MESHER
+  WRITE(*,*)'R80_FICTITIOUS_IN_MESHER',R80_FICTITIOUS_IN_MESHER
+  WRITE(*,*)'================================================='
+  ! ----------- end mofication <FM> -----------------------
+
   ! sets time step size and number of layers
   ! right distribution is determined based upon maximum value of NEX
   call get_timestep_and_layers()

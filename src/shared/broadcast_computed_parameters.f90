@@ -40,7 +40,7 @@
   integer, parameter :: nparam_l = 74
   logical, dimension(nparam_l) :: bcast_logical
 
-  integer, parameter :: nparam_dp = 42
+  integer, parameter :: nparam_dp = 47
   double precision, dimension(nparam_dp) :: bcast_double_precision
 
   ! initializes containers
@@ -124,7 +124,8 @@
             MEMORY_INSTALLED_PER_CORE_IN_GB,PERCENT_OF_MEM_TO_USE_PER_CORE, &
             RECORD_LENGTH_IN_MINUTES, USER_DT, &
             SPONGE_LATITUDE_IN_DEGREES,SPONGE_LONGITUDE_IN_DEGREES,SPONGE_RADIUS_IN_DEGREES, &
-            REGIONAL_MESH_CUTOFF_DEPTH /)
+            REGIONAL_MESH_CUTOFF_DEPTH, & 
+            SOURCE_T1, SOURCE_T2, SOURCE_T3, SOURCE_T4, TAU/)
   endif
 
   ! broadcasts the information read on the main to the nodes
@@ -392,6 +393,13 @@
     SPONGE_LONGITUDE_IN_DEGREES = bcast_double_precision(40)
     SPONGE_RADIUS_IN_DEGREES = bcast_double_precision(41)
     REGIONAL_MESH_CUTOFF_DEPTH = bcast_double_precision(42)
+    ! Added <FM> Feb 2022
+    SOURCE_T1 = bcast_double_precision(43)
+    SOURCE_T2 = bcast_double_precision(44)
+    SOURCE_T3 = bcast_double_precision(45)
+    SOURCE_T4 = bcast_double_precision(46)
+    TAU = bcast_double_precision(47)
+    ! ============================
   endif
 
   end subroutine broadcast_computed_parameters

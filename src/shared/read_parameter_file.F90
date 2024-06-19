@@ -106,6 +106,23 @@
   call read_value_double_precision(RECORD_LENGTH_IN_MINUTES, 'RECORD_LENGTH_IN_MINUTES', ier)
   if (ier /= 0) stop 'an error occurred while reading the parameter file: RECORD_LENGTH_IN_MINUTES'
 
+  ! Read source parameters (added by <FM> Jan, 2022)
+  call read_value_double_precision(SOURCE_T1,'SOURCE_T1', ier)
+  if (ier /= 0) stop 'error occurred with parameter:SOURCE_T1'
+
+  call read_value_double_precision(SOURCE_T2,'SOURCE_T2', ier)
+  if (ier /= 0) stop 'error occurred with parameter:SOURCE_T2'
+
+  call read_value_double_precision(SOURCE_T3,'SOURCE_T3', ier)
+  if (ier /= 0) stop 'error occurred with parameter:SOURCE_T3'
+
+  call read_value_double_precision(SOURCE_T4,'SOURCE_T4', ier)
+  if (ier /= 0) stop 'error occurred with parameter:SOURCE_T4'
+
+  call read_value_double_precision(TAU,'TAU', ier)
+  if (ier /= 0) stop 'error occurred with parameter: TAU'
+  ! ------------ end modification -------------
+  
   ! regional mesh cut-off
   call read_value_logical(REGIONAL_MESH_CUTOFF, 'REGIONAL_MESH_CUTOFF', ier)
   if (ier /= 0) stop 'an error occurred while reading the parameter file: REGIONAL_MESH_CUTOFF'
