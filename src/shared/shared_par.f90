@@ -207,6 +207,10 @@
   logical :: SHIFT_SIMULTANEOUS_RUNS = .false.
   double precision :: FILESYSTEM_IO_BANDWIDTH = 0.d0
 
+  ! Source time function parameters (Added by <FM> Jan,  2022)
+  double precision :: SOURCE_T1, SOURCE_T2, SOURCE_T3, &
+                      SOURCE_T4, TAU
+
   end module shared_input_parameters
 
 !
