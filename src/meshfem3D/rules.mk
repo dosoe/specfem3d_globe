@@ -83,6 +83,9 @@ meshfem3D_MESHER_OBJECTS = \
 	$O/lgndr.check.o \
 	$O/meshfem3D_par.check_module.o \
 	$O/meshfem3D_models.check.o \
+	$O/model_1dberkeley.check.o \
+	$O/model_berkeley.check.o \
+	$O/model_crust_berkeley.check.o \
 	$O/model_1dref.check.o \
 	$O/model_1066a.check.o \
 	$O/model_ak135.check.o \
@@ -149,6 +152,10 @@ meshfem3D_MODULES = \
 	$(FC_MODDIR)/mpi_trinfinite_par.$(FC_MODEXT) \
 	$(FC_MODDIR)/mpi_infinite_par.$(FC_MODEXT) \
 	$(FC_MODDIR)/siem_meshfem_par.$(FC_MODEXT) \
+	$(FC_MODDIR)/model_1dberkeley_par.$(FC_MODEXT) \
+	$(FC_MODDIR)/model_berkeley_par.$(FC_MODEXT) \
+	$(FC_MODDIR)/model_crust_berkeley_par.$(FC_MODEXT) \
+	$(FC_MODDIR)/model_berkeley_mantle_par.$(FC_MODEXT) \
 	$(FC_MODDIR)/model_1066a_par.$(FC_MODEXT) \
 	$(FC_MODDIR)/model_1dref_par.$(FC_MODEXT) \
 	$(FC_MODDIR)/model_ak135_par.$(FC_MODEXT) \
@@ -236,6 +243,7 @@ meshfem3D_SHARED_OBJECTS = \
 	$O/spline_routines.shared.o \
 	$O/write_VTK_file.shared.o \
 	$O/ylm.shared.o \
+	$O/spl_A3d.cc.o \
 	$(EMPTY_MACRO)
 
 ###
@@ -348,6 +356,7 @@ $O/model_attenuation.check.o: \
 	$O/model_sea1d.check.o \
 	$O/model_case65TAY.check.o \
 	$O/model_ccrem.check.o \
+	$O/model_1dberkeley.check.o \
 	$O/model_vpremoon.shared.o \
 	$O/model_mars_1D.shared.o \
 	$(EMPTY_MACRO)

@@ -612,6 +612,9 @@ xwrite_profile_OBJECTS += \
 	$O/model_sglobecrust.check.o \
 	$O/model_sh_mars.check.o \
 	$O/model_spiral.check.o \
+	$O/model_1dberkeley.check.o \
+	$O/model_berkeley.check.o \
+	$O/model_crust_berkeley.check.o \
 	$(EMPTY_MACRO)
 
 # from src/shared/
@@ -654,6 +657,7 @@ xwrite_profile_SHARED_OBJECTS = \
 	$O/spline_routines.shared.o \
 	$O/write_VTK_file.shared.o \
 	$O/ylm.shared.o \
+	$O/spl_A3d.cc.o \
 	$(EMPTY_MACRO)
 
 # adios

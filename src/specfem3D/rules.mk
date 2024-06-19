@@ -54,12 +54,14 @@ specfem3D_SOLVER_OBJECTS = \
 	$O/get_event_info.solver.o \
 	$O/make_gravity.solver.o \
 	$O/netlib_specfun_erf.solver.o \
+	$O/ucb_dfour.solver.o \
 	$(EMPTY_MACRO)
 
 # solver objects with either statically or dynamic allocated arrays;
 # in case of STATIC_COMPILATION, dependent upon OUTPUT_FILES/values_from_mesher.h file
 
 specfem3D_SOLVER_OBJECTS += \
+	$O/ucb_heaviside.solverstatic_module.o \
 	$O/asdf_data.solverstatic_module.o \
 	$O/check_stability.solverstatic.o \
 	$O/comp_source_time_function.solverstatic.o \
@@ -131,6 +133,7 @@ specfem3D_SOLVER_OBJECTS += \
 
 specfem3D_MODULES = \
 	$(FC_MODDIR)/asdf_data.$(FC_MODEXT) \
+	$(FC_MODDIR)/ucb_heaviside.$(FC_MODEXT) \
 	$(FC_MODDIR)/constants_solver.$(FC_MODEXT) \
 	$(FC_MODDIR)/manager_adios.$(FC_MODEXT) \
 	$(FC_MODDIR)/specfem_par.$(FC_MODEXT) \
