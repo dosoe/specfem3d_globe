@@ -217,6 +217,13 @@
 
   enddo ! of ilayer_loop
 
+  ! <FM> - Print initialized options on terminal 
+  WRITE(*,*)'=================================================='
+  WRITE(*,*)'After meshing: what is the Moho now?'
+  WRITE(*,*)'R_MOHO',r_moho
+  WRITE(*,*)'================================================='
+  ! ----------- end mofication <FM> -----------------------
+
   ! stats
   call sum_all_i(ispec_count,ispec_count_all)
 

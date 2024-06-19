@@ -46,7 +46,8 @@
     TOPOGRAPHY,ELLIPTICITY
 
   use meshfem_par, only: &
-    RMOHO_FICTITIOUS_IN_MESHER,R220,RMIDDLE_CRUST,REFERENCE_CRUSTAL_MODEL
+    RMOHO_FICTITIOUS_IN_MESHER,R220,RMIDDLE_CRUST,REFERENCE_CRUSTAL_MODEL, &
+    TOPOGRAPHY,THREE_D_MODEL,THREE_D_MODEL_BERKELEY
 
   implicit none
 
@@ -134,8 +135,26 @@
     !       we need to convert the geocentric mesh positions (x/y/z) to geographic ones (lat/lon)
     !
     ! converts geocentric coordinates x/y/z to geographic radius/latitude/longitude (in degrees)
+<<<<<<< HEAD
     ! note: at this point, the mesh is still spherical (no need to correct latitude for ellipticity)
     call xyz_2_rlatlon_dble(x,y,z,r,lat,lon,ELLIPTICITY)
+=======
+    if( USE_OLD_VERSION_5_1_5_FORMAT.OR.THREE_D_MODEL==THREE_D_MODEL_BERKELEY) then
+      ! note: at this point, the mesh is still perfectly spherical, thus no need to
+      !         convert the geocentric colatitude to a geographic colatitude
+      call xyz_2_rthetaphi_dble(x,y,z,r,theta,phi)
+      call reduce(theta,phi)
+      lat = (PI_OVER_TWO - theta) * RADIANS_TO_DEGREES
+      lon = phi * RADIANS_TO_DEGREES
+    else
+      ! note: the moho information is given in geographic latitude/longitude (with respect to a reference ellipsoid).
+      !       we need to convert the geocentric mesh positions (x/y/z) to geographic ones (lat/lon),
+      !       thus correcting geocentric latitude for ellipticity
+      !
+      ! converts geocentric coordinates x/y/z to geographic radius/latitude/longitude (in degrees)
+      call xyz_2_rlatlon_dble(x,y,z,r,lat,lon)
+    endif
+>>>>>>> 411c733d (updating mesher)
 
     ! sets longitude bounds [-180,180]
     if (lon > 180.d0 ) lon = lon - 360.0d0

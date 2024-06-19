@@ -137,6 +137,12 @@
 
     case (REFERENCE_MODEL_CCREM)
       call model_ccrem_broadcast(CRUSTAL)
+    
+    case(REFERENCE_MODEL_SEMUCB) ! Berkeley model always has external crust
+      call model_1dberkeley_broadcast()
+    
+    case(REFERENCE_MODEL_PREM_A3D) ! Berkeley model always has external crust
+      call model_1dberkeley_broadcast()
 
     case (REFERENCE_MODEL_VPREMOON)
       call model_vpremoon_broadcast(CRUSTAL)
@@ -231,6 +237,10 @@
       case (THREE_D_MODEL_SPIRAL)
         ! SPiRal model
         call model_mantle_spiral_broadcast()
+      
+      case(THREE_D_MODEL_BERKELEY)
+        ! Berkeley SEMUCB model (should be used along with the berkeley crust)
+        call model_berkeley_broadcast()
 
       case (THREE_D_MODEL_HETEROGEN_PREM)
         !chris modif checker 02/20/21
@@ -346,6 +356,10 @@
     case (ICRUST_SH_MARS)
       ! Mars SH model (defines both crust & mantle)
       call model_SH_mars_broadcast()
+    
+    case (ICRUST_BERKELEY)
+      ! EPcrust
+      call model_berkeley_crust_broadcast(myrank)
 
     case default
       stop 'crustal model type not defined'
@@ -523,6 +537,15 @@
       vsv = vs
       vsh = vs
       eta_aniso = 1.d0
+    
+    case(REFERENCE_MODEL_SEMUCB)
+      ! BERKELEY MODEL SEMUCB
+      call model_1dberkeley(r_prem,rho,vpv,vph,vsv,vsh,eta_aniso,Qkappa,Qmu,iregion_code,CRUSTAL)
+
+    case(REFERENCE_MODEL_PREM_A3D)
+      ! BERKELEY MODEL SEMUCB
+      call model_1dberkeley(r_prem,rho,vpv,vph,vsv,vsh,eta_aniso,Qkappa,Qmu,iregion_code,CRUSTAL)
+
 
     case (REFERENCE_MODEL_JP1D)
       !JP1D (by Zhao et al.) - pure isotropic model, used also as background for 3D models
@@ -626,6 +649,7 @@
                                             ispec,i,j,k)
 
   use meshfem_models_par
+  use constants,only: EARTH_R_KM
 
   implicit none
 
@@ -909,6 +933,48 @@
           call model_mantle_spiral(r_used,lat,lon,vpv,vph,vsv,vsh,eta_aniso,rho, &
                                    c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
                                    c33,c34,c35,c36,c44,c45,c46,c55,c56,c66)
+
+        case (THREE_D_MODEL_BERKELEY)
+          ! 3D Berkeley Model SEMUCB
+          call model_berkeley_shsv(dble(r_used*EARTH_R_KM),theta,phi,dvsh,dvsv, &
+                                        dvph,dvpv,drho,eta_aniso,iregion_code,CRUSTAL)
+
+          !
+          ! call model_prem_iso(myrank,r_prem,rho,drhodr,vp,vs,Qkappa,&
+          !      Qmu,idoubling,CRUSTAL, ONE_CRUST,.true.,RICB,RCMB, &
+          !      RTOPDDOUBLEPRIME, R600,R670,R220,R771,R400,R80,RMOHO,RMIDDLE_CRUST,ROCEAN)
+
+          ! to use speed values from the 1D reference model but with 3D mesh variations
+          if( USE_1D_REFERENCE ) then
+            ! sets all 3D variations in the mantle to zero
+            dvpv = 0.d0
+            dvph = 0.d0
+            dvsv = 0.d0
+            dvsh = 0.d0
+          endif
+
+          if(TRANSVERSE_ISOTROPY) then
+            vpv=vpv*(1.0d0+dble(dvpv))
+            vph=vph*(1.0d0+dble(dvph))
+            vsv=vsv*(1.0d0+dble(dvsv))
+            vsh=vsh*(1.0d0+dble(dvsh))
+            rho=rho*(1.0d0+drho)        
+          else
+            vpv=vpv+dvpv
+            vph=vph+dvph
+            vsv=vsv+dvsv
+            vsh=vsh+dvsh
+            vp = sqrt(((8.d0+4.d0*eta_aniso)*vph*vph + 3.d0*vpv*vpv &
+                      + (8.d0 - 8.d0*eta_aniso)*vsv*vsv)/15.d0)
+            vs = sqrt(((1.d0-2.d0*eta_aniso)*vph*vph + vpv*vpv &
+                      + 5.d0*vsh*vsh + (6.d0+4.d0*eta_aniso)*vsv*vsv)/15.d0)
+            vpv=vp
+            vph=vp
+            vsv=vs
+            vsh=vs
+            eta_aniso=1.0d0
+            rho=rho*(1.0d0+drho)
+          endif
 
         case (THREE_D_MODEL_HETEROGEN_PREM)
           ! chris modif checkers 02/20/21
@@ -1282,6 +1348,10 @@
     rho = rhoc
     eta_aniso = etac
 
+    if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY)THEN
+      call model_berkeley_crust_aniso(lat,lon,r,vpv,vph,vsv,vsh,eta_aniso,rho,moho)
+    endif
+
     ! sets anisotropy in crustal region as well
     if (ANISOTROPIC_3D_MANTLE .and. iregion_code == IREGION_CRUST_MANTLE) then
 
@@ -1533,6 +1603,15 @@
       vphc = vpc
       vsvc = vsc
       vshc = vsc
+    
+    case (ICRUST_BERKELEY)
+     ! general crustmaps
+      call model_berkeley_crust(lat,lon,r,vpc,vsc,rhoc,moho)
+      vpvc = vpc
+      vphc = vpc
+      vsvc = vsc
+      vshc = vsc
+      found_crust = .true.
 
     case default
       stop 'crustal model type not defined'

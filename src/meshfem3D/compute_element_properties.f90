@@ -45,9 +45,9 @@
     TOPOGRAPHY,ELLIPTICITY,CRUSTAL,CASE_3D, &
     THREE_D_MODEL,THREE_D_MODEL_MANTLE_SH,THREE_D_MODEL_S29EA, &
     THREE_D_MODEL_S362ANI,THREE_D_MODEL_S362WMANI,THREE_D_MODEL_S362ANI_PREM, &
-    THREE_D_MODEL_BKMNS_GLAD,THREE_D_MODEL_SPIRAL, &
-    ibathy_topo, &
-    REGIONAL_MOHO_MESH
+    THREE_D_MODEL_BKMNS_GLAD,THREE_D_MODEL_SPIRAL,THREE_D_MODEL_BERKELEY, &
+    ibathy_topo,nspl,rspl,ellipicity_spline,ellipicity_spline2, &
+    REGIONAL_MOHO_MESH 
 
   ! ellipticity
   use meshfem_models_par, only: nspl,rspl,ellipicity_spline,ellipicity_spline2
@@ -188,7 +188,7 @@
   endif ! IREGION_CRUST_MANTLE
 
   ! sets element tiso flag
-  call compute_element_tiso_flag(elem_is_tiso,elem_in_mantle,iregion_code,ispec,nspec,idoubling)
+  call compute_element_tiso_flag(elem_is_tiso,elem_in_crust,elem_in_mantle,iregion_code,ispec,nspec,idoubling)
 
   ! stores as element flags
   ispec_is_tiso(ispec) = elem_is_tiso
@@ -473,14 +473,14 @@
 !
 
 
-  subroutine compute_element_tiso_flag(elem_is_tiso,elem_in_mantle,iregion_code,ispec,nspec,idoubling)
+  subroutine compute_element_tiso_flag(elem_is_tiso,elem_in_crust,elem_in_mantle,iregion_code,ispec,nspec,idoubling)
 
 ! sets transverse isotropic flag for elements in crust/mantle
 
   use constants, only: IMAIN,myrank, &
     IFLAG_CRUST,IFLAG_220_80,IFLAG_80_MOHO,IFLAG_670_220,IFLAG_MANTLE_NORMAL,IREGION_CRUST_MANTLE, &
     REFERENCE_MODEL_1DREF,REFERENCE_MODEL_1DREF, &
-    THREE_D_MODEL_S362WMANI,THREE_D_MODEL_SGLOBE
+    THREE_D_MODEL_S362WMANI,THREE_D_MODEL_SGLOBE,THREE_D_MODEL_BERKELEY
 
   use meshfem_models_par, only: &
     TRANSVERSE_ISOTROPY,USE_FULL_TISO_MANTLE,REFERENCE_1D_MODEL,THREE_D_MODEL
@@ -488,7 +488,7 @@
   implicit none
 
   logical,intent(out) :: elem_is_tiso
-  logical,intent(in) :: elem_in_mantle
+  logical,intent(in) :: elem_in_mantle,elem_in_crust
   integer,intent(in) :: iregion_code,ispec
   integer,intent(in) :: nspec
   integer,dimension(nspec),intent(in) :: idoubling
@@ -604,6 +604,8 @@
     continue
 
   end select
+
+  if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY.and.elem_in_crust)elem_is_tiso=.true.
 
   !debug
   !if (myrank == 0) print *,'  element ',ispec,' tiso flag: ',elem_is_tiso

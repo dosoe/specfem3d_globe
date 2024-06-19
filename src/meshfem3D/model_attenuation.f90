@@ -226,6 +226,9 @@
   use model_mars_1d_par, only: &
     NR_mars_1D_layers,mars_1D_Qmu_original
 
+  use model_1dberkeley_par, only: &
+    NR_REF_BERKELEY,Mref_V_radius_berkeley,Mref_V_Qmu_berkeley
+
   implicit none
 
   integer,intent(in) :: REFERENCE_1D_MODEL
@@ -299,6 +302,14 @@
     call define_model_case65TAY(.false.)
     Qn = NR_case65TAY
 
+  case(REFERENCE_MODEL_SEMUCB)
+    if (myrank == 0) write(IMAIN,*) '  model: Berkeley attenuation'
+    Qn = NR_REF_BERKELEY
+  
+  case(REFERENCE_MODEL_PREM_A3D)
+    if (myrank == 0) write(IMAIN,*) '  model: Berkeley attenuation'
+    Qn = NR_REF_BERKELEY
+
   case (REFERENCE_MODEL_MARS_1D)
     ! Mars
     if (myrank == 0) write(IMAIN,*) '  model: mars_1D attenuation'
@@ -352,6 +363,14 @@
   case (REFERENCE_MODEL_CCREM)
     ! Moon
     Qmu(:) = CCREM_Qmu_original(:)
+  
+  case(REFERENCE_MODEL_SEMUCB)
+    ! radius = Mref_V_radius_berkeley(:)
+    Qmu(:)    = Mref_V_Qmu_berkeley(:)
+  
+  case(REFERENCE_MODEL_PREM_A3D)
+    ! radius = Mref_V_radius_berkeley(:)
+    Qmu(:)    = Mref_V_Qmu_berkeley(:)
 
   ! Mars models
   case (REFERENCE_MODEL_SOHL, &
