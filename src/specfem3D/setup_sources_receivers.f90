@@ -661,6 +661,7 @@
            Mxz(NSOURCES), &
            Myz(NSOURCES),stat=ier)
   if (ier /= 0 ) call exit_MPI(myrank,'Error allocating source arrays')
+
   ! initializes arrays
   islice_selected_source(:) = -1
   ispec_selected_source(:) = 0
@@ -835,6 +836,9 @@
     enddo
     ! start time defined as positive value, will be subtracted
     t0 = - t0
+    if (STF_IS_UCB_HEAVISIDE) then
+      t0 = 0 !sevan 2021.09.01
+    endif
   else
     ! moment tensors
     if (USE_MONOCHROMATIC_CMT_SOURCE) then

@@ -27,7 +27,8 @@
 
   double precision function comp_source_time_function(t,hdur,it_index)
 
-  use constants, only: EXTERNAL_SOURCE_TIME_FUNCTION
+  use ucb_heaviside, only: ucb_stf ! for berkeley source time function
+  use constants, only: EXTERNAL_SOURCE_TIME_FUNCTION,STF_IS_UCB_HEAVISIDE
 
   implicit none
 
@@ -38,7 +39,9 @@
   double precision, external :: comp_source_time_function_heavi
   double precision, external :: comp_source_time_function_ext
 
-  if (EXTERNAL_SOURCE_TIME_FUNCTION) then
+  if (STF_IS_UCB_HEAVISIDE) then
+    comp_source_time_function = ucb_stf(t)
+  else if (EXTERNAL_SOURCE_TIME_FUNCTION) then
     ! external stf
     comp_source_time_function = comp_source_time_function_ext(it_index)
   else

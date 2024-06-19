@@ -31,6 +31,8 @@
   use specfem_par_crustmantle
   use specfem_par_innercore
   use specfem_par_outercore
+  use shared_compute_parameters,only: PATHNAME_TOPO_FILE
+  use constants,only: A3d_folder
 
   implicit none
 
@@ -62,7 +64,7 @@
 
     if (I_should_read_the_database) then
       ! main reads file
-      if (myrank == 0) then
+      if (myrank == 0  .OR. PATHNAME_TOPO_FILE == trim(A3d_folder)//'ETOPO5_1x1_filtre.dat') then
         ! user output
         write(IMAIN,*) 'topography:'
         call flush_IMAIN()

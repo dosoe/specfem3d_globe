@@ -27,6 +27,7 @@
 
   subroutine initialize_simulation()
 
+  use ucb_heaviside, only: init_ucb_heaviside 
   use specfem_par
   use specfem_par_movie
   use manager_adios
@@ -117,6 +118,11 @@
 
   ! synchronizes processes
   call synchronize_all()
+
+  ! initialize stf if needed (for ucb heaviside)
+  if(STF_IS_UCB_HEAVISIDE)then
+    call init_ucb_heaviside(NSTEP,DT)
+  endif
 
   if (myrank == 0) then
 

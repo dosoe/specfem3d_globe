@@ -489,7 +489,8 @@
 
 ! returns source time function value for specified time
 
-  use specfem_par, only: USE_FORCE_POINT_SOURCE,USE_MONOCHROMATIC_CMT_SOURCE,force_stf,hdur,hdur_Gaussian
+  use specfem_par, only: USE_FORCE_POINT_SOURCE,USE_MONOCHROMATIC_CMT_SOURCE,force_stf,hdur,hdur_Gaussian, &
+                         STF_IS_UCB_HEAVISIDE
 
   implicit none
 
@@ -531,6 +532,9 @@
     case default
       stop 'unsupported force_stf value!'
     end select
+    if (STF_IS_UCB_HEAVISIDE) then
+      stf = comp_source_time_function(time_source_dble, hdur_gaussian(isource),it_index)
+    endif
   else
     ! moment-tensor
     ! Heaviside source time function
