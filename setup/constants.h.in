@@ -64,6 +64,17 @@
 ! ("xcheck_buffers_1D" etc.), ignore it if you do not plan to use them
   logical, parameter :: LOCAL_PATH_IS_ALSO_GLOBAL = .@LOCAL_PATH_IS_ALSO_GLOBAL@.
 
+! ********************************************************************************************************   
+! Save mirror files
+logical, parameter :: SAVE_MIRRORS = .false. 
+
+! ********************************************************************************************************
+! Path to A3d model (only if MODEL == PREM_A3d_1Dcrust or SEMUCB_A3d    )
+! Make sure this line ends on "/"
+! character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/"
+character (len=*), parameter :: A3d_folder = "DATA/SEMUCB_A3d/"
+!*********************************************************************************************************
+
 ! maximum length of strings used for paths, reading from files, etc.
   integer, parameter :: MAX_STRING_LEN = 512
 
@@ -74,9 +85,9 @@
 ! I/O unit for file input,output
   integer, parameter :: IIN = 40,IOUT = 41
 ! uncomment this to write messages to a text file
-  integer, parameter :: IMAIN = 42
+! integer, parameter :: IMAIN = 42
 ! uncomment this to write messages to the screen (slows down the code)
-! integer, parameter :: IMAIN = ISTANDARD_OUTPUT
+  integer, parameter :: IMAIN = ISTANDARD_OUTPUT
 
 ! I/O unit for noise data files
   integer, parameter :: IIN_NOISE = 43,IOUT_NOISE = 44
@@ -112,29 +123,29 @@
 !!-----------------------------------------------------------
 !--- ETOPO5 5-minute model, smoothed Harvard version (not provided in package, see DATA/topo_bathy/ for more infos)
 ! size of topography and bathymetry file
-  integer, parameter :: NX_BATHY_5 = 4320,NY_BATHY_5 = 2160
+!  integer, parameter :: NX_BATHY_5 = 4320,NY_BATHY_5 = 2160
 ! resolution of topography file in minutes
-  double precision, parameter :: RESOLUTION_TOPO_FILE_5 = 5.0
+!  double precision, parameter :: RESOLUTION_TOPO_FILE_5 = 5.0
 ! pathname of the topography file
-  character (len=*), parameter :: PATHNAME_TOPO_FILE_5 = &
-    'DATA/topo_bathy/topo_bathy_etopo5_smoothed_Harvard.dat'
+!  character (len=*), parameter :: PATHNAME_TOPO_FILE_5 = &
+!    'DATA/topo_bathy/topo_bathy_etopo5_smoothed_Harvard.dat'
 
 !---  ETOPO4 4-minute model (default)
 ! size of topography and bathymetry file
-  integer, parameter :: NX_BATHY_4 = 5400,NY_BATHY_4 = 2700
+!  integer, parameter :: NX_BATHY_4 = 5400,NY_BATHY_4 = 2700
 ! resolution of topography file in minutes
-  double precision, parameter :: RESOLUTION_TOPO_FILE_4 = 4.0
+!  double precision, parameter :: RESOLUTION_TOPO_FILE_4 = 4.0
 ! pathname of the topography file
 ! character (len=*), parameter :: PATHNAME_TOPO_FILE_4 = &
 !    'DATA/topo_bathy/topo_bathy_etopo4_from_etopo2_subsampled.bin'
-  character (len=*), parameter :: PATHNAME_TOPO_FILE_4 = &
-    'DATA/topo_bathy/topo_bathy_etopo4_smoothed_window_7.bin'
+!  character (len=*), parameter :: PATHNAME_TOPO_FILE_4 = &
+!    'DATA/topo_bathy/topo_bathy_etopo4_smoothed_window_7.bin'
 
 !--- ETOPO2 2-minute model (not provided in package, see DATA/topo_bathy/ for more infos)
 ! size of topography and bathymetry file
-  integer, parameter :: NX_BATHY_2 = 10800,NY_BATHY_2 = 5400
+!  integer, parameter :: NX_BATHY_2 = 10800,NY_BATHY_2 = 5400
 ! resolution of topography file in minutes
-  double precision, parameter :: RESOLUTION_TOPO_FILE_2 = 2.0
+!  double precision, parameter :: RESOLUTION_TOPO_FILE_2 = 2.0
 ! pathname of the topography file
 ! character (len=*), parameter :: PATHNAME_TOPO_FILE_2 = &
 !    'DATA/topo_bathy/topo_bathy_etopo1_ice_c_resampled_at_2minutes_original_unmodified_unsmoothed.bin'
@@ -142,26 +153,35 @@
 !    'DATA/topo_bathy/topo_bathy_etopo1_ice_c_resampled_at_2minutes_smoothed_window_3.bin'
 ! character (len=*), parameter :: PATHNAME_TOPO_FILE_2 = &
 !    'DATA/topo_bathy/topo_bathy_etopo2v2c_original_unmodified_unsmoothed.bin'
-  character (len=*), parameter :: PATHNAME_TOPO_FILE_2 = &
-    'DATA/topo_bathy/topo_bathy_etopo2v2c_smoothed_window_3.bin'
+!  character (len=*), parameter :: PATHNAME_TOPO_FILE_2 = &
+!    'DATA/topo_bathy/topo_bathy_etopo2v2c_smoothed_window_3.bin'
 
 !--- ETOPO1 1-minute model (not provided in package, see DATA/topo_bathy/ for more infos)
 ! size of topography and bathymetry file
-  integer, parameter :: NX_BATHY_1 = 21600,NY_BATHY_1 = 10800
+!  integer, parameter :: NX_BATHY_1 = 21600,NY_BATHY_1 = 10800
 ! resolution of topography file in minutes
-  double precision, parameter :: RESOLUTION_TOPO_FILE_1 = 1.0
+!  double precision, parameter :: RESOLUTION_TOPO_FILE_1 = 1.0
 ! pathname of the topography file
 !  character (len=*), parameter :: PATHNAME_TOPO_FILE_1 = &
 !    'DATA/topo_bathy/topo_bathy_etopo1_ice_c_original_unmodified_unsmoothed.bin'
-  character (len=*), parameter :: PATHNAME_TOPO_FILE_1 = &
-    'DATA/topo_bathy/topo_bathy_etopo1_ice_c_smoothed_window_3.bin'
+!  character (len=*), parameter :: PATHNAME_TOPO_FILE_1 = &
+!    'DATA/topo_bathy/topo_bathy_etopo1_ice_c_smoothed_window_3.bin'
+
+!!--- ETOPO1 5 - Berkeley filtered
+!! size of topography and bathymetry file
+  integer, parameter :: NX_BATHY_B = 360,NY_BATHY_B = 180
+!! resolution of topography file in minutes
+  integer, parameter :: RESOLUTION_TOPO_FILE_B = 2
+!! pathname of the topography file (un-smoothed)
+  character (len=*), parameter :: PATHNAME_TOPO_FILE_B = trim(A3d_folder)//"ETOPO5_1x1_filtre.dat"
+
 
 !--- Default
-! Topography defaults to ETOPO4
-  integer, parameter :: EARTH_NX_BATHY = NX_BATHY_4
-  integer, parameter :: EARTH_NY_BATHY = NY_BATHY_4
-  double precision, parameter :: EARTH_RESOLUTION_TOPO_FILE = RESOLUTION_TOPO_FILE_4
-  character (len=*), parameter :: EARTH_PATHNAME_TOPO_FILE = PATHNAME_TOPO_FILE_4
+! Topography defaults to Berkeley
+  integer, parameter :: EARTH_NX_BATHY = NX_BATHY_B
+  integer, parameter :: EARTH_NY_BATHY = NY_BATHY_B
+  double precision, parameter :: EARTH_RESOLUTION_TOPO_FILE = RESOLUTION_TOPO_FILE_B
+  character (len=*), parameter :: EARTH_PATHNAME_TOPO_FILE = PATHNAME_TOPO_FILE_B
 
 ! For the reference ellipsoid to convert geographic latitudes to geocentric:
 !
@@ -193,11 +213,15 @@
 ! the code will print an error message and stop if it finds that the topography input file
 ! contains values outside this range.
 ! we take a safety margin just in case of a smoothed or modified model, which can locally create slightly different values
-  integer, parameter :: EARTH_TOPO_MINIMUM = - 11200 ! (max depth in m, Mariana trench)
-  integer, parameter :: EARTH_TOPO_MAXIMUM = + 9000 ! (height in m, Mount Everest)
+  integer, parameter :: EARTH_TOPO_MINIMUM = - 200000 ! (max depth in m, Mariana trench)
+  integer, parameter :: EARTH_TOPO_MAXIMUM = + 200000 ! (height in m, Mount Everest)
 
 ! minimum thickness in meters to include the effect of the oceans and topo
-  double precision, parameter :: MINIMUM_THICKNESS_3D_OCEANS = 50.d0
+  double precision, parameter :: MINIMUM_THICKNESS_3D_OCEANS = 100.d0
+
+! SA Path for FORCESOLUTION file
+character(len=*), parameter :: IN_DATA_FILES = './DATA/'
+! /SA
 
 ! plots pnm-image (showing used topography)
 ! file can become fairly big for large topo-files, e.g. ETOPO1 creates a ~2.7 GB pnm-image
@@ -272,7 +296,7 @@
 
 ! distance threshold (in km) above which we consider that a receiver
 ! is located outside the mesh and therefore excluded from the station list
-  double precision, parameter :: THRESHOLD_EXCLUDE_STATION = 5.d0
+  double precision, parameter :: THRESHOLD_EXCLUDE_STATION = 50.d0
 
 ! This parameter flags whether or not we will use an external source
 ! time function. Set to false by default.
@@ -280,6 +304,9 @@
 
 ! This parameter determines the taper length of monochromatic source time function in seconds
   double precision, parameter :: TAPER_MONOCHROMATIC_SOURCE = 200.0d0
+
+! source-time function is a UCB-style filtered heaviside
+  logical, parameter :: STF_IS_UCB_HEAVISIDE = .true. 
 
 !!-----------------------------------------------------------
 !!
@@ -313,7 +340,7 @@
 
 ! in the case of 1D attenuation models, use NGLL^3 storage of the attenuation constants in each GLL spectral element anyway
 ! (always safe to leave that to true; in the case of 1D attenuation models, setting it to false can save some memory storage)
-  logical, parameter :: ATTENUATION_1D_WITH_3D_STORAGE  = .true.
+  logical, parameter :: ATTENUATION_1D_WITH_3D_STORAGE  = .false.
 
 !!-----------------------------------------------------------
 !!
@@ -881,6 +908,8 @@
   integer, parameter :: REFERENCE_MODEL_JP1D       = 7
   integer, parameter :: REFERENCE_MODEL_SEA1D      = 8
   integer, parameter :: REFERENCE_MODEL_CCREM      = 9
+  integer, parameter :: REFERENCE_MODEL_SEMUCB     = 10
+  integer, parameter :: REFERENCE_MODEL_PREM_A3D   = 11
   ! Mars
   integer, parameter :: REFERENCE_MODEL_SOHL       = 101
   integer, parameter :: REFERENCE_MODEL_SOHL_B     = 102
@@ -902,6 +931,7 @@
   integer, parameter :: ICRUST_BKMNS_GLAD  = 8    ! Block Mantle Spherical-Harmonics model
   integer, parameter :: ICRUST_SPIRAL      = 9    ! SPiRaL
   integer, parameter :: ICRUST_SH_MARS     = 10   ! SH mars models (define crust & mantle values)
+  integer, parameter :: ICRUST_BERKELEY    = 11  
 
 ! define flag for 3D Earth model
   integer, parameter :: THREE_D_MODEL_S20RTS        = 101
@@ -924,6 +954,7 @@
   integer, parameter :: THREE_D_MODEL_SPIRAL        = 118
   integer, parameter :: THREE_D_MODEL_HETEROGEN_PREM = 119
   integer, parameter :: THREE_D_MODEL_SH_MARS       = 120
+  integer, parameter :: THREE_D_MODEL_BERKELEY      = 121
   ! inner core model
   integer, parameter :: THREE_D_MODEL_INNER_CORE_ISHII = 201
 
