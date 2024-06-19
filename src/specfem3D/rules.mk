@@ -63,6 +63,7 @@ specfem3D_SOLVER_OBJECTS = \
 specfem3D_SOLVER_OBJECTS += \
 	$O/ucb_heaviside.solverstatic_module.o \
 	$O/asdf_data.solverstatic_module.o \
+	$O/bcast_mesh_databases.solverstatic.o \
 	$O/check_stability.solverstatic.o \
 	$O/comp_source_time_function.solverstatic.o \
 	$O/compute_add_sources.solverstatic.o \
@@ -115,6 +116,16 @@ specfem3D_SOLVER_OBJECTS += \
 	$O/read_mesh_parameters.solverstatic.o \
 	$O/read_mesh_databases.solverstatic.o \
 	$O/read_topography_bathymetry.solverstatic.o \
+	$O/SIEM_compute_kernels.solverstatic.o \
+	$O/SIEM_compute_seismograms.solverstatic.o \
+	$O/SIEM_index_region.solverstatic.o \
+	$O/SIEM_infinite_element.solverstatic.o \
+	$O/SIEM_poisson.solverstatic.o \
+	$O/SIEM_prepare_iteration.solverstatic.o \
+	$O/SIEM_prepare_solver.solverstatic.o \
+	$O/SIEM_solve.solverstatic.o \
+	$O/SIEM_solver_mpi.solverstatic.o \
+	$O/SIEM_solver_petsc.solverstatic.o \
 	$O/save_forward_arrays.solverstatic.o \
 	$O/save_kernels.solverstatic.o \
 	$O/save_regular_kernels.solverstatic.o \
@@ -145,6 +156,10 @@ specfem3D_MODULES = \
 	$(FC_MODDIR)/specfem_par_noise.$(FC_MODEXT) \
 	$(FC_MODDIR)/specfem_par_movie.$(FC_MODEXT) \
 	$(FC_MODDIR)/specfem_par_full_gravity.$(FC_MODEXT) \
+	$(FC_MODDIR)/siem_infinite_element.$(FC_MODEXT) \
+	$(FC_MODDIR)/siem_poisson.$(FC_MODEXT) \
+	$(FC_MODDIR)/siem_solver_mpi.$(FC_MODEXT) \
+	$(FC_MODDIR)/siem_solver_petsc.$(FC_MODEXT) \
 	$(EMPTY_MACRO)
 
 # These files come from the shared directory
@@ -189,6 +204,7 @@ specfem3D_SHARED_OBJECTS = \
 	$O/rthetaphi_xyz.shared.o \
 	$O/search_kdtree.shared.o \
 	$O/shared_par.shared_module.o \
+	$O/SIEM_math_library.shared.o \
 	$O/spline_routines.shared.o \
 	$O/write_VTK_file.shared.o \
 	$(EMPTY_MACRO)
@@ -328,13 +344,20 @@ else
 	reqstatic_header =
 endif
 
+##
+## PETSC support
+##
+ifeq ($(PETSC),yes)
+	specfem3D_MODULES += $(FC_MODDIR)/siem_solver_petsc.$(FC_MODEXT)
+endif
+
 #######################################
 
 ####
 #### rules for executables
 ####
 
-SPECFEM_LINK_FLAGS = $(LDFLAGS) $(MPILIBS) $(LIBS)
+SPECFEM_LINK_FLAGS = $(MPILIBS)
 
 # cuda/opencl/hip
 SPECFEM_LINK_FLAGS += $(GPU_LINK)
@@ -384,7 +407,19 @@ $O/make_gravity.solver.o: $O/model_prem.shared.o $O/model_Sohl.shared.o $O/model
 # Version file
 $O/initialize_simulation.solverstatic.o: ${SETUP}/version.fh
 
-
+# SIEM
+$O/SIEM_compute_kernels.solverstatic.o: $O/SIEM_math_library.shared.o $O/SIEM_poisson.solverstatic.o \
+																				$O/SIEM_solver_petsc.solverstatic.o $O/SIEM_solver_mpi.solverstatic.o
+$O/SIEM_infinite_element.solverstatic.o: $O/SIEM_math_library.shared.o
+$O/SIEM_poisson.solverstatic.o: $O/SIEM_math_library.shared.o $O/SIEM_infinite_element.solverstatic.o
+$O/SIEM_prepare_iteration.solverstatic.o: $O/SIEM_math_library.shared.o $O/SIEM_poisson.solverstatic.o \
+																$O/SIEM_solver_petsc.solverstatic.o $O/SIEM_solver_mpi.solverstatic.o
+$O/SIEM_prepare_solver.solverstatic.o: $O/SIEM_math_library.shared.o $O/SIEM_poisson.solverstatic.o
+$O/SIEM_solve.solverstatic.o: $O/SIEM_math_library.shared.o $O/SIEM_poisson.solverstatic.o \
+															$O/SIEM_solver_petsc.solverstatic.o $O/SIEM_solver_mpi.solverstatic.o
+$O/SIEM_solver_mpi.solverstatic.o: $O/SIEM_math_library.shared.o
+$O/SIEM_solver_petsc.solverstatic.o: $O/SIEM_math_library.shared.o
+$O/SIEM_compute_seismograms.solverstatic.o: $O/SIEM_math_library.shared.o
 
 ###
 ### specfem3D - optimized flags and dependence on values from mesher here

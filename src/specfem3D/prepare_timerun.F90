@@ -63,6 +63,9 @@
   ! precomputes gravity factors
   call prepare_gravity()
 
+  ! full gravity preparation
+  if (FULL_GRAVITY) call SIEM_prepare_solver()
+
   ! precomputes attenuation factors
   call prepare_attenuation()
 
@@ -93,6 +96,9 @@
 
   ! optimizes array memory layout for better performance
   call prepare_optimized_arrays()
+
+  ! free up memory
+  call prepare_deallocate_unused_arrays()
 
   ! synchronize all the processes
   call synchronize_all()
@@ -560,11 +566,6 @@
 !$OMP END PARALLEL
 #endif
 
-  ! old x/y/z array not needed anymore
-  deallocate(xstore_crust_mantle,ystore_crust_mantle,zstore_crust_mantle)
-  deallocate(xstore_outer_core,ystore_outer_core,zstore_outer_core)
-  deallocate(xstore_inner_core,ystore_inner_core,zstore_inner_core)
-
   end subroutine prepare_timerun_convert_coord
 
 !
@@ -595,8 +596,8 @@
 
   ! distinguish between single and double precision for reals
   deltat = real(DT*scale_t_inv, kind=CUSTOM_REAL)
-  deltatover2 = 0.5d0*deltat
-  deltatsqover2 = 0.5d0*deltat*deltat
+  deltatover2 = real(0.5d0*deltat, kind=CUSTOM_REAL)
+  deltatsqover2 = real(0.5d0*deltat*deltat, kind=CUSTOM_REAL)
 
   if (SIMULATION_TYPE == 3) then
     if (UNDO_ATTENUATION) then
@@ -607,8 +608,8 @@
     else
       ! reconstructed wavefield moves backward in time from last snapshot
       b_deltat = - real(DT*scale_t_inv, kind=CUSTOM_REAL)
-      b_deltatover2 = 0.5d0*b_deltat
-      b_deltatsqover2 = 0.5d0*b_deltat*b_deltat
+      b_deltatover2 = real(0.5d0*b_deltat, kind=CUSTOM_REAL)
+      b_deltatsqover2 = real(0.5d0*b_deltat*b_deltat, kind=CUSTOM_REAL)
     endif
   else
     ! will not be used, but initialized
@@ -784,9 +785,9 @@
     ! determines time shift (in millisec) depending on group number
     if (estimated_io_time_in_millisec > 5000) then
       ! limits shifts to 5s
-      millisec_shift = 5000.d0 * mygroup
+      millisec_shift = int(5000.d0 * mygroup)
     else
-      millisec_shift = estimated_io_time_in_millisec * mygroup
+      millisec_shift = int(estimated_io_time_in_millisec * mygroup)
     endif
 
     ! user output
@@ -833,3 +834,29 @@
   endif
 
   end subroutine prepare_simultaneous_event_execution_shift_undoatt
+
+!
+!-------------------------------------------------------------------------------------------------
+!
+
+  subroutine prepare_deallocate_unused_arrays()
+
+  ! free up memory by deallocating arrays that are no more needed
+
+  use specfem_par, only: FULL_GRAVITY
+
+  use specfem_par_crustmantle
+  use specfem_par_outercore
+  use specfem_par_innercore
+
+  implicit none
+
+  ! full gravity still needs xstore,.. arrays
+  if (FULL_GRAVITY) return
+
+  ! old x/y/z array not needed anymore
+  deallocate(xstore_crust_mantle,ystore_crust_mantle,zstore_crust_mantle)
+  deallocate(xstore_outer_core,ystore_outer_core,zstore_outer_core)
+  deallocate(xstore_inner_core,ystore_inner_core,zstore_inner_core)
+
+  end subroutine prepare_deallocate_unused_arrays

@@ -100,8 +100,14 @@
   if (ier /= 0) stop 'an error occurred while reading the parameter file: ATTENUATION'
 
   ! full gravity support
-  call read_value_logical(FULL_GRAVITY, 'FULL_GRAVITY', ier)
-  if (ier /= 0) stop 'an error occurred while reading the parameter file: FULL_GRAVITY'
+  if (GRAVITY) then
+    call read_value_logical(FULL_GRAVITY, 'FULL_GRAVITY', ier)
+    if (ier /= 0) stop 'an error occurred while reading the parameter file: FULL_GRAVITY'
+    if (FULL_GRAVITY) then
+      call read_value_integer(POISSON_SOLVER, 'POISSON_SOLVER', ier)
+      if (ier /= 0) stop 'an error occurred while reading the parameter file: POISSON_SOLVER'
+    endif
+  endif
 
   call read_value_double_precision(RECORD_LENGTH_IN_MINUTES, 'RECORD_LENGTH_IN_MINUTES', ier)
   if (ier /= 0) stop 'an error occurred while reading the parameter file: RECORD_LENGTH_IN_MINUTES'
@@ -380,6 +386,7 @@
   ! closes parameter file
   call close_parameter_file()
 
+  ! checks ADIOS compilation support
 #if !defined(USE_ADIOS) && !defined(USE_ADIOS2)
   if (ADIOS_ENABLED) then
     print *
@@ -393,5 +400,21 @@
     stop 'an error occurred while reading the parameter file: ADIOS is enabled but code not built with ADIOS'
   endif
 #endif
+
+  ! checks PETSc compilation support
+#if !defined(USE_PETSC)
+  if (FULL_GRAVITY .and. POISSON_SOLVER == ISOLVER_PETSC) then
+    print *
+    print *,'**************'
+    print *,'**************'
+    print *,'PETSC solver is selected in parameter file but the code was not compiled with PETSc support'
+    print *,'See --with-petsc configure options.'
+    print *,'**************'
+    print *,'**************'
+    print *
+    stop 'an error occurred while reading the parameter file: PETSC solver is selected but code not built with PETSc support'
+  endif
+#endif
+
 
   end subroutine read_parameter_file

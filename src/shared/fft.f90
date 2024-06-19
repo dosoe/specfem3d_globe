@@ -61,6 +61,7 @@
   ! in any case the line below imposes a maximum of 31, otherwise the integer 2**n will overflow
 
   lx = 2**npow
+  flx = lx
 
   do l = 1,npow
 
@@ -69,6 +70,7 @@
     lbhalf = lblock/2
 
     k = 0
+    ii = 0
 
     do iblock = 1,nblock
 
@@ -92,16 +94,17 @@
 
       do i = 2,npow
         ii = i
-        if (k < mpow(i)) goto 4
-        k = k-mpow(i)
+        if (k < int(mpow(i))) goto 4
+        k = k - int(mpow(i))
       enddo
 
-    4 k = k+mpow(ii)
+    4 k = k + int(mpow(ii))
 
     enddo
   enddo
 
   k = 0
+  ii = 0
 
   do j = 1,lx
     if (k < j) goto 5
@@ -112,11 +115,11 @@
 
 5   do i = 1,npow
       ii = i
-      if (k < mpow(i)) goto 7
-      k = k-mpow(i)
+      if (k < int(mpow(i))) goto 7
+      k = k - int(mpow(i))
     enddo
 
-7   k = k+mpow(ii)
+7   k = k + int(mpow(ii))
   enddo
 
   ! final steps deal with dt factors
@@ -169,7 +172,7 @@
 
   call FFT(npow,s,zign,dtt,mpow)    ! Fourier transform
 
-  r(1:nsmp) = real(s(1:nsmp))       ! take the real part
+  r(1:nsmp) = real(s(1:nsmp),kind=CUSTOM_REAL)       ! take the real part
 
   end subroutine FFTinv
 
@@ -193,7 +196,7 @@
   n1 = np2 + 1
 
   s(n1) = 0.0
-  s(1)  = cmplx(real(s(1)),0.0)
+  s(1)  = cmplx(real(s(1)),0.0,kind=CUSTOM_CMPLX)
 
   do i = 1,np2
     s(np2+i) = conjg(s(np2+2-i))

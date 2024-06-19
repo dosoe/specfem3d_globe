@@ -274,8 +274,8 @@ module specfem_par
   !-----------------------------------------------------------------
 
   ! for ellipticity
-  integer :: nspl
-  double precision,dimension(NR_DENSITY) :: rspl,ellipicity_spline,ellipicity_spline2
+  integer :: nspl_ellip
+  double precision,dimension(NR_DENSITY) :: rspl_ellip,ellipicity_spline,ellipicity_spline2
 
   !-----------------------------------------------------------------
   ! rotation
@@ -1132,7 +1132,30 @@ module specfem_par_full_gravity
 
   implicit none
 
+  ! non-dimensionalization
+  double precision :: scale_accel,scale_pgrav
+
+  ! seismograms
+  ! perturbed gravitational potential
+  real(kind=CUSTOM_REAL),allocatable :: seismograms_phi(:,:,:)
+  ! perturbed gravity
+  real(kind=CUSTOM_REAL),allocatable :: seismograms_pgrav(:,:,:)
+  ! perturbed gravity gradient
+  real(kind=CUSTOM_REAL),allocatable :: seismograms_Hgrav(:,:,:,:)
+  ! Due to background gravity. Free-air change in the gravity (vertical) or tilt of the ground surface(horizontal)
+  real(kind=CUSTOM_REAL),allocatable :: seismograms_grav(:,:,:)
+  ! Coriolis acceleration
+  real(kind=CUSTOM_REAL),allocatable :: seismograms_corio(:,:,:)
+
+  ! gradient of the background gravity at receiver location: \nabla g, where g = ||g||
+  real(kind=CUSTOM_REAL),allocatable :: g_spec_rec(:,:,:),gradg_rec(:,:)
+
+  ! Lagrange interpolators at receivers
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storederiv_rec
+
   ! full gravity solver
+  real(kind=CUSTOM_REAL), dimension(:),allocatable :: gravity_rho_crust_mantle,gravity_rho_inner_core
+  real(kind=CUSTOM_REAL), dimension(:),allocatable :: gravity_rho_g_over_kappa_outer_core
 
   ! MPI infinite mesh
   ! transition infinite
@@ -1141,8 +1164,8 @@ module specfem_par_full_gravity
   integer, dimension(:), allocatable :: my_neighbors_trinfinite,nibool_interfaces_trinfinite
   integer, dimension(:,:), allocatable :: ibool_interfaces_trinfinite
 
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: buffer_send_scalar_trinfinite,buffer_recv_scalar_trinfinite
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: b_buffer_send_scalar_trinfinite,b_buffer_recv_scalar_trinfinite
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: buffer_send_scalar_trinfinite,buffer_recv_scalar_trinfinite
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: b_buffer_send_scalar_trinfinite,b_buffer_recv_scalar_trinfinite
 
   integer, dimension(:), allocatable :: request_send_scalar_trinfinite,request_recv_scalar_trinfinite
   integer, dimension(:), allocatable :: b_request_send_scalar_trinfinite,b_request_recv_scalar_trinfinite
@@ -1153,13 +1176,13 @@ module specfem_par_full_gravity
   integer, dimension(:), allocatable :: my_neighbors_infinite,nibool_interfaces_infinite
   integer, dimension(:,:), allocatable :: ibool_interfaces_infinite
 
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: buffer_send_scalar_infinite,buffer_recv_scalar_infinite
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: b_buffer_send_scalar_infinite,b_buffer_recv_scalar_infinite
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: buffer_send_scalar_infinite,buffer_recv_scalar_infinite
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: b_buffer_send_scalar_infinite,b_buffer_recv_scalar_infinite
 
   integer, dimension(:), allocatable :: request_send_scalar_infinite,request_recv_scalar_infinite
   integer, dimension(:), allocatable :: b_request_send_scalar_infinite,b_request_recv_scalar_infinite
 
-  ! Level-1 solver-------------------
+  ! Level-1 solver
   ! MPI crust/mantle mesh
   integer :: num_interfaces_crust_mantle1
   integer :: max_nibool_interfaces_crust_mantle1
@@ -1190,8 +1213,8 @@ module specfem_par_full_gravity
   integer, dimension(:), allocatable :: my_neighbors_outer_core1,nibool_interfaces_outer_core1
   integer, dimension(:,:), allocatable :: ibool_interfaces_outer_core1
 
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: buffer_send_scalar_outer_core1,buffer_recv_scalar_outer_core1
-  real(kind=CUSTOM_REAL), dimension(:,:), allocatable :: b_buffer_send_scalar_outer_core1,b_buffer_recv_scalar_outer_core1
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: buffer_send_scalar_outer_core1,buffer_recv_scalar_outer_core1
+  real(kind=CUSTOM_REAL), dimension(:,:), pointer :: b_buffer_send_scalar_outer_core1,b_buffer_recv_scalar_outer_core1
 
   integer, dimension(:), allocatable :: request_send_scalar_outer_core1,request_recv_scalar_outer_core1
   integer, dimension(:), allocatable :: b_request_send_scalar_outer_core1,b_request_recv_scalar_outer_core1
@@ -1207,120 +1230,158 @@ module specfem_par_full_gravity
   integer :: max_nibool_interfaces_infinite1
   integer, dimension(:), allocatable :: my_neighbors_infinite1,nibool_interfaces_infinite1
   integer, dimension(:,:), allocatable :: ibool_interfaces_infinite1
-  !----------------Level-1 solver
 
   ! parameters for Poisson's equation
-  integer :: neq, neq1, b_neq, b_neq1, nnode, nnode1
+  integer :: neq, nnode
+  integer :: neq1, nnode1
+  double precision,dimension(:,:),allocatable :: lagrange_gll
+  double precision,dimension(:,:),allocatable :: lagrange_gll1
 
-  double precision,dimension(NGLLCUBE,NGLLCUBE) :: lagrange_gll
-
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_ic       ! pgrav_ic(NGLOB_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_oc       ! pgrav_oc(NGLOB_OUTER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_cm       ! pgrav_cm(NGLOB_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_trinf    ! pgrav_trinf(NGLOB_TRINFINITE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_inf      ! pgrav_inf(NGLOB_INFINITE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon, load, pgrav
+  ! Level-1 solver arrays
   real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_ic1, pgrav_oc1, pgrav_cm1, pgrav_trinf1, pgrav_inf1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon1, load1, pgrav1, pgrav1_oldrun
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon1, gravload1
+  ! Level-2 solver arrays
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav_ic, pgrav_oc, pgrav_cm, pgrav_trinf, pgrav_inf
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: pgrav
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon, gravload
 
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: WEvector
-
-  ! Adjoint arrays for Poisson Equation:
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_ic     ! b_pgrav_ic(NGLOB_INNER_CORE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_oc     ! b_pgrav_oc(NGLOB_OUTER_CORE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_cm     ! b_pgrav_cm(NGLOB_CRUST_MANTLE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_trinf  ! b_pgrav_trinf(NGLOB_TRINFINITE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_inf    ! b_pgrav_inf(NGLOB_INFINITE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_dprecon, b_load, b_pgrav
+  ! Adjoint arrays for Poisson Equation
+  ! Level-1 solver arrays
   real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_ic1, b_pgrav_oc1, b_pgrav_cm1, b_pgrav_trinf1, b_pgrav_inf1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_dprecon1, b_load1, b_pgrav1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_gravload1
+  ! Level-2 solver arrays
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav_ic, b_pgrav_oc, b_pgrav_cm, b_pgrav_trinf, b_pgrav_inf
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_pgrav
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: b_gravload
 
+  ! Level-2 solver
   ! number of global degrees of freedom
   integer :: ngdof,nsparse
-  integer,dimension(:),allocatable :: l2gdof, krow_sparse, kcol_sparse, kgrow_sparse, kgcol_sparse
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: kmat_sparse
+  integer,dimension(:),allocatable :: l2gdof
+  integer,dimension(:),allocatable :: krow_sparse, kcol_sparse, kgrow_sparse, kgcol_sparse
 
-  ! level-1 solver
+  ! Level-1 solver
   ! number of global degrees of freedom
   integer :: ngdof1,nsparse1
-  integer,dimension(:),allocatable :: l2gdof1, krow_sparse1, kcol_sparse1, kgrow_sparse1, kgcol_sparse1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: kmat_sparse1
-
-  double precision,dimension(NGLLCUBE_INF,NGLLCUBE_INF) :: lagrange_gll1
+  integer,dimension(:),allocatable :: l2gdof1
+  integer,dimension(:),allocatable :: krow_sparse1, kcol_sparse1, kgrow_sparse1, kgcol_sparse1
 
   integer :: nnode_ic1,nnode_oc1,nnode_cm1,nnode_trinf1,nnode_inf1
+
+  ! mirror nodes
   integer,dimension(:),allocatable :: nmir_ic, nmir_oc, nmir_cm, nmir_trinf, nmir_inf
 
-  integer,dimension(:,:),allocatable :: inode_map_ic      ! inode_map_ic(2,NGLOB_INNER_CORE)
-  integer,dimension(:,:),allocatable :: inode_map_oc      ! inode_map_oc(2,NGLOB_OUTER_CORE)
-  integer,dimension(:,:),allocatable :: inode_map_cm      ! inode_map_cm(2,NGLOB_CRUST_MANTLE)
-  integer,dimension(:,:),allocatable :: inode_map_trinf   ! inode_map_trinf(2,NGLOB_TRINFINITE)
-  integer,dimension(:,:),allocatable :: inode_map_inf     ! inode_map_inf(2,NGLOB_INFINITE)
+  ! mapping
+  integer,dimension(:,:),allocatable :: inode_map_ic,inode_map_oc,inode_map_cm,inode_map_trinf,inode_map_inf
 
-  integer,dimension(NGLLCUBE_INF) :: igll_on
-  logical,dimension(NGLLCUBE) :: isgll
+  integer,dimension(:,:),allocatable :: inode_elmt_ic,inode_elmt_oc,inode_elmt_cm,inode_elmt_trinf,inode_elmt_inf
+  integer,dimension(:,:),allocatable :: inode_elmt_ic1,inode_elmt_oc1,inode_elmt_cm1,inode_elmt_trinf1,inode_elmt_inf1
+
+  ! active GLL points
+  integer,dimension(NGLLCUBE_INF) :: igll_active_on
+  logical,dimension(NGLLCUBE) :: is_active_gll
 
   ! parameters for ENSIGHT GOLD files
-  character(len=20) :: ptail
-  integer :: twidth
+  !integer :: nnode4_ic,nnode4_oc,nnode4_cm
+  !integer,allocatable :: inode4_ic(:),inode4_oc(:),inode4_cm(:)
 
-  ! Inbuilt solver nondim scaling:
+  ! CG solver scaling
+  logical, parameter :: CG_SCALING = .true.
+  ! CG solver non-dim scaling
   real(kind=CUSTOM_REAL),dimension(:),allocatable :: ndscale1, ndscale
 
-  ! full gravity arrays
+  ! full gravity arrays for kernels
   ! crust/mantle
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_cm     ! (NDIM,NGLOB_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: gradg_cm ! (6,NGLOB_CRUST_MANTLE)
-  ! parameters for Poisson's solver
-  integer,dimension(:,:),allocatable :: inode_elmt_cm   ! (NGLLCUBE,NSPEC_CRUST_MANTLE)
-  integer,dimension(:,:),allocatable :: inode_elmt_cm1  ! (NGLL_INF,NSPEC_CRUST_MANTLE)
-  integer,dimension(:),allocatable :: gdof_cm, gdof_cm1
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_cm
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: gradg_cm
+  ! inner core - kernels not implemented yet
+  !real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_ic
+  !real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: gradg_ic
+  ! outer core - kernels not implemented yet
+  !real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_oc
 
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_crust_mantle   ! (NGLLCUBE,NGLLCUBE,NSPEC_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_crust_mantle         ! (NGLOB_CRUST_MANTLE)
+  ! parameters for Poisson's solver
+  ! crust/mantle
+  integer,dimension(:),allocatable :: gdof_cm, gdof_cm1
+  integer,dimension(:,:),allocatable :: ggdof_cm, ggdof_cm1
+
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_crust_mantle
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_crust_mantle
   real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_crust_mantle1
   real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_crust_mantle1
 
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_cm        ! (NDIM,NGLLCUBE,NGLLCUBE,NSPEC_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_cm            ! (NGLL,NSPEC_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_cm1       ! (NDIM,NGLL_INF,NGLL_INF,NSPEC_CRUST_MANTLE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_cm1           ! (NGLL_INF,NSPEC_CRUST_MANTLE)
-
-  ! inner core
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_ic       ! g_ic(NDIM,NGLOB_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: gradg_ic   ! gradg_ic(6,NGLOB_INNER_CORE)
-  ! parameters for Poisson's solver
-  integer,dimension(:,:),allocatable :: inode_elmt_ic     ! inode_elmt_ic(NGLLCUBE,NSPEC_INNER_CORE)
-  integer,dimension(:,:),allocatable :: inode_elmt_ic1    ! inode_elmt_ic1(NGLL_INF,NSPEC_INNER_CORE)
-  integer,dimension(:),allocatable :: gdof_ic,gdof_ic1
-
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_inner_core   ! (NGLLCUBE,NGLLCUBE,NSPEC_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_inner_core         ! (NGLOB_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable ::  storekmat_inner_core1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_inner_core1
-
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_ic        ! (NDIM,NGLLCUBE,NGLLCUBE,NSPEC_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_ic            ! (NGLLCUBE,NSPEC_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_ic1       ! (NDIM,NGLL_INF,NGLL_INF,NSPEC_INNER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_ic1           ! (NGLL_INF,NSPEC_INNER_CORE)
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_cm
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_cm
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_cm1
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_cm1,storejw_cm1
 
   ! outer core
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: g_oc ! (NDIM,NGLOB_OUTER_CORE)
+  integer,dimension(:),allocatable :: gdof_oc, gdof_oc1
+  integer,dimension(:,:),allocatable :: ggdof_oc, ggdof_oc1
 
-  ! parameters for Poisson's solver
-  integer,dimension(:,:),allocatable :: inode_elmt_oc   ! (NGLLCUBE,NSPEC_OUTER_CORE)
-  integer,dimension(:,:),allocatable :: inode_elmt_oc1  ! (NGLL_INF,NSPEC_OUTER_CORE)
-  integer,dimension(:),allocatable :: gdof_oc,gdof_oc1
-
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_outer_core ! (NGLLCUBE,NGLLCUBE,NSPEC_OUTER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_outer_core   ! (NGLOB_OUTER_CORE)
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_outer_core
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_outer_core
   real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_outer_core1
   real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_outer_core1
 
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_oc  ! (NDIM,NGLLCUBE,NGLLCUBE,NSPEC_OUTER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_oc      ! (NGLLCUBE,NSPEC_OUTER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_oc1 ! (NDIM,NGLL_INF,NGLL_INF,NSPEC_OUTER_CORE)
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_oc1     ! (NGLL_INF,NSPEC_OUTER_CORE)
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_oc
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_oc
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_oc1
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_oc1
+
+  ! inner core
+  integer,dimension(:),allocatable :: gdof_ic, gdof_ic1
+  integer,dimension(:,:),allocatable :: ggdof_ic, ggdof_ic1
+
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_inner_core
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_inner_core
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable ::  storekmat_inner_core1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_inner_core1
+
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_ic
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_ic
+  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: storederiv_ic1
+  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: storerhojw_ic1
+
+  ! transition-to-infinite
+  integer,dimension(:),allocatable :: gdof_trinf, gdof_trinf1
+  integer,dimension(:,:),allocatable :: ggdof_trinf, ggdof_trinf1
+
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_trinfinite
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_trinfinite
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_trinfinite1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_trinfinite1
+
+  ! infinite
+  integer,dimension(:),allocatable :: gdof_inf, gdof_inf1
+  integer,dimension(:,:),allocatable :: ggdof_inf, ggdof_inf1
+
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_infinite
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_infinite
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_infinite1
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_infinite1
+
+  ! Full gravity kernels
+  ! density kernel 1 (related to gravity matrix \Pi)
+  real(kind=CUSTOM_REAL), dimension(:,:,:,:,:), allocatable :: rho1siem_kl_crust_mantle
+  ! density kernel 2
+  real(kind=CUSTOM_REAL), dimension(:,:,:,:,:,:), allocatable :: rho2siem_kl_crust_mantle
+  ! 1. and 2. gravity kernel
+  real(kind=CUSTOM_REAL), dimension(:,:,:,:), allocatable ::  gknl1, gknl2
+
+  ! for debugging only: delete at some point
+  real(kind=CUSTOM_REAL), dimension(:,:,:,:,:), allocatable :: debug_rho_kl_cm
+
+  ! for the Euler scheme for rotation in linear indexing
+  real(kind=CUSTOM_REAL),dimension(:,:), allocatable :: A_array_rotationL, B_array_rotationL
+
+  ! for the Euler scheme for rotation in linear indexing for 3-GLLX points
+  real(kind=CUSTOM_REAL),dimension(:,:), allocatable :: A_array_rotationL3, B_array_rotationL3
+
+  ! for the adjoint Euler scheme for rotation in linear indexing for 3-GLLX points
+  real(kind=CUSTOM_REAL),dimension(:,:), allocatable :: b_A_array_rotationL3, b_B_array_rotationL3
 
 end module specfem_par_full_gravity
 
@@ -1336,68 +1397,23 @@ module specfem_par_trinfinite
 
   ! ----------------- trinfinite ---------------------
   ! mesh parameters
-  integer,dimension(:,:,:,:),allocatable :: ibool_trinfinite    ! (NGLLX,NGLLY,NGLLZ,NSPEC_TRINFINITE)
+  integer,dimension(:,:,:,:),allocatable :: ibool_trinfinite
 
   real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: &
     xix_trinfinite, xiy_trinfinite, xiz_trinfinite, &
     etax_trinfinite, etay_trinfinite, etaz_trinfinite, &
-    gammax_trinfinite, gammay_trinfinite, gammaz_trinfinite     ! (NGLLX,NGLLY,NGLLZ,NSPEC_TRINFINITE)
+    gammax_trinfinite, gammay_trinfinite, gammaz_trinfinite
 
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: xstore_trinfinite, ystore_trinfinite, zstore_trinfinite, &
-    xstore0_trinfinite, ystore0_trinfinite, zstore0_trinfinite  ! (NGLOB_TRINFINITE)
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: xstore_trinfinite, ystore_trinfinite, zstore_trinfinite
 
   integer :: nspec2D_xmin_trinfinite,nspec2D_xmax_trinfinite, &
-             nspec2D_ymin_trinfinite,nspec2D_ymax_trinfinite, &
-             nspec2D_zmin_trinfinite
-
-  integer,dimension(:,:),allocatable :: nimin_trinfinite,nimax_trinfinite,nkmin_eta_trinfinite  ! (2,NSPEC2DMAX_YMIN_YMAX_TRINF)
-  integer,dimension(:,:),allocatable :: njmin_trinfinite,njmax_trinfinite,nkmin_xi_trinfinite   ! (2,NSPEC2DMAX_XMIN_XMAX_TRINF)
-
-  integer :: reclen_xmin_trinfinite,reclen_xmax_trinfinite, &
-             reclen_ymin_trinfinite,reclen_ymax_trinfinite, &
-             reclen_zmin
-
-  real(kind=CUSTOM_REAL),dimension(:,:),allocatable :: &
-    vector_accel_trinfinite,vector_displ_trinfinite,b_vector_displ_trinfinite       ! (NDIM,NGLOB_TRINFINITE_ADJOINT)
+             nspec2D_ymin_trinfinite,nspec2D_ymax_trinfinite
 
   ! arrays to couple with the fluid regions by pointwise matching
-  integer,dimension(:),allocatable :: ibelm_xmin_trinfinite,ibelm_xmax_trinfinite   ! (NSPEC2DMAX_XMIN_XMAX_TRINF)
-  integer,dimension(:),allocatable :: ibelm_ymin_trinfinite,ibelm_ymax_trinfinite   ! (NSPEC2DMAX_YMIN_YMAX_TRINF)
-  integer,dimension(:),allocatable :: ibelm_bottom_trinfinite                       ! (NSPEC2D_BOTTOM_TRINF)
-  integer,dimension(:),allocatable :: ibelm_top_trinfinite                          ! (NSPEC2D_TOP_TRINF)
-
-  ! (NDIM,NGLLY,NGLLZ,NSPEC2DMAX_XMIN_XMAX_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: normal_xmin_trinfinite,normal_xmax_trinfinite
-  ! (NDIM,NGLLX,NGLLZ,NSPEC2DMAX_YMIN_YMAX_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: normal_ymin_trinfinite,normal_ymax_trinfinite
-  ! (NDIM,NGLLX,NGLLY,NSPEC2D_BOTTOM_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: normal_bottom_trinfinite
-  ! (NDIM,NGLLX,NGLLY,NSPEC2D_TOP_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: normal_top_trinfinite
-
-  ! (NGLLX,NGLLY,NSPEC2D_BOTTOM_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: jacobian2D_bottom_trinfinite
-  ! (NGLLX,NGLLY,NSPEC2D_TOP_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: jacobian2D_top_trinfinite
-  ! (NGLLY,NGLLZ,NSPEC2DMAX_XMIN_XMAX_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: jacobian2D_xmin_trinfinite,jacobian2D_xmax_trinfinite
-  ! (NGLLX,NGLLZ,NSPEC2DMAX_YMIN_YMAX_TRINF)
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: jacobian2D_ymin_trinfinite,jacobian2D_ymax_trinfinite
-
-  ! adjoint kernels
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: &
-    rho_kl_trinfinite,alpha_kl_trinfinite   ! (NGLLX,NGLLY,NGLLZ,NSPEC_TRINFINITE_ADJOINT)
-
-  ! kernel runs
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: &
-    div_displ_trinfinite                    ! (NGLLX,NGLLY,NGLLZ,NSPEC_TRINFINITE_ADJOINT)
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: &
-    b_div_displ_trinfinite                  ! (NGLLX,NGLLY,NGLLZ,NSPEC_TRINFINITE_ADJOINT)
-
-  ! check for deviatoric kernel for outer core region
-  real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: beta_kl_trinfinite
-  integer :: nspec_beta_kl_trinfinite
-  logical,parameter:: deviatoric_trinfinite = .false.
+  integer,dimension(:),allocatable :: ibelm_xmin_trinfinite,ibelm_xmax_trinfinite
+  integer,dimension(:),allocatable :: ibelm_ymin_trinfinite,ibelm_ymax_trinfinite
+  integer,dimension(:),allocatable :: ibelm_bottom_trinfinite
+  integer,dimension(:),allocatable :: ibelm_top_trinfinite
 
   ! inner / outer elements outer core region
   integer :: num_phase_ispec_trinfinite
@@ -1407,18 +1423,6 @@ module specfem_par_trinfinite
   ! mesh coloring
   integer :: num_colors_outer_trinfinite,num_colors_inner_trinfinite
   integer,dimension(:),allocatable :: num_elem_colors_trinfinite
-
-  ! parameters for Poisson's solver
-  integer,dimension(:,:),allocatable :: inode_elmt_trinf  ! inode_elmt_trinf(NGLLCUBE,NSPEC_TRINFINITE)
-  integer,dimension(:,:),allocatable :: inode_elmt_trinf1 ! inode_elmt_trinf1(NGLLCUBE_INF,NSPEC_TRINFINITE)
-
-  integer,dimension(:),allocatable :: gdof_trinf, gdof_trinf1
-  integer,dimension(:,:),allocatable :: ggdof_trinf, ggdof_trinf1
-
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_trinfinite
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_trinfinite
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_trinfinite1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_trinfinite1
 
 end module specfem_par_trinfinite
 
@@ -1434,70 +1438,23 @@ module specfem_par_infinite
 
   ! ----------------- infinite ---------------------
   ! mesh parameters
-  integer,dimension(:,:,:,:),allocatable :: ibool_infinite  ! (NGLLX,NGLLY,NGLLZ,NSPEC_INFINITE)
+  integer,dimension(:,:,:,:),allocatable :: ibool_infinite
 
   real(kind=CUSTOM_REAL),dimension(:,:,:,:),allocatable :: &
     xix_infinite, xiy_infinite, xiz_infinite, &
     etax_infinite, etay_infinite, etaz_infinite, &
-    gammax_infinite, gammay_infinite, gammaz_infinite       ! (NGLLX,NGLLY,NGLLZ,NSPEC_INFINITE)
+    gammax_infinite, gammay_infinite, gammaz_infinite
 
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: &
-    xstore_infinite, ystore_infinite, zstore_infinite, &
-    xstore0_infinite, ystore0_infinite, zstore0_infinite    ! (NGLOB_INFINITE)
+  real(kind=CUSTOM_REAL),dimension(:),allocatable :: xstore_infinite, ystore_infinite, zstore_infinite
 
   integer :: nspec2D_xmin_infinite,nspec2D_xmax_infinite, &
-             nspec2D_ymin_infinite,nspec2D_ymax_infinite, &
-             nspec2D_zmin_infinite
-
-  integer, dimension(:,:),allocatable :: nimin_infinite,nimax_infinite,nkmin_eta_infinite ! (2,NSPEC2DMAX_YMIN_YMAX_INF)
-  integer, dimension(:,:),allocatable :: njmin_infinite,njmax_infinite,nkmin_xi_infinite  ! (2,NSPEC2DMAX_XMIN_XMAX_INF)
-
-  integer :: reclen_xmin_infinite, reclen_xmax_infinite, &
-             reclen_ymin_infinite, reclen_ymax_infinite, &
-             reclen_zmin
-
-  real(kind=CUSTOM_REAL), dimension(:,:),allocatable :: &
-    vector_accel_infinite,vector_displ_infinite,b_vector_displ_infinite  ! (NDIM,NGLOB_INFINITE_ADJOINT)
+             nspec2D_ymin_infinite,nspec2D_ymax_infinite
 
   ! arrays to couple with the fluid regions by pointwise matching
-  integer, dimension(:),allocatable :: ibelm_xmin_infinite,ibelm_xmax_infinite    ! (NSPEC2DMAX_XMIN_XMAX_INF)
-  integer, dimension(:),allocatable :: ibelm_ymin_infinite,ibelm_ymax_infinite    ! (NSPEC2DMAX_YMIN_YMAX_INF)
-  integer, dimension(:),allocatable :: ibelm_bottom_infinite                      ! (NSPEC2D_BOTTOM_INF)
-  integer, dimension(:),allocatable :: ibelm_top_infinite                         ! (NSPEC2D_TOP_INF)
-
-  ! (NDIM,NGLLY,NGLLZ,NSPEC2DMAX_XMIN_XMAX_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: normal_xmin_infinite,normal_xmax_infinite
-  ! (NDIM,NGLLX,NGLLZ,NSPEC2DMAX_YMIN_YMAX_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: normal_ymin_infinite,normal_ymax_infinite
-  ! (NDIM,NGLLX,NGLLY,NSPEC2D_BOTTOM_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: normal_bottom_infinite
-  ! (NDIM,NGLLX,NGLLY,NSPEC2D_TOP_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: normal_top_infinite
-
-  ! (NGLLX,NGLLY,NSPEC2D_BOTTOM_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:),allocatable :: jacobian2D_bottom_infinite
-  ! (NGLLX,NGLLY,NSPEC2D_TOP_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:),allocatable :: jacobian2D_top_infinite
-  ! (NGLLY,NGLLZ,NSPEC2DMAX_XMIN_XMAX_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:),allocatable :: jacobian2D_xmin_infinite,jacobian2D_xmax_infinite
-  ! (NGLLX,NGLLZ,NSPEC2DMAX_YMIN_YMAX_INF)
-  real(kind=CUSTOM_REAL), dimension(:,:,:),allocatable :: jacobian2D_ymin_infinite,jacobian2D_ymax_infinite
-
-  ! adjoint kernels
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: &
-    rho_kl_infinite,alpha_kl_infinite   ! (NGLLX,NGLLY,NGLLZ,NSPEC_INFINITE_ADJOINT)
-
-  ! kernel runs
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: &
-    div_displ_infinite                  ! (NGLLX,NGLLY,NGLLZ,NSPEC_INFINITE_ADJOINT)
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: &
-    b_div_displ_infinite                ! (NGLLX,NGLLY,NGLLZ,NSPEC_INFINITE_ADJOINT)
-
-  ! check for deviatoric kernel for outer core region
-  real(kind=CUSTOM_REAL), dimension(:,:,:,:),allocatable :: beta_kl_infinite
-  integer :: nspec_beta_kl_infinite
-
-  logical, parameter:: deviatoric_infinite = .false.
+  integer, dimension(:),allocatable :: ibelm_xmin_infinite,ibelm_xmax_infinite
+  integer, dimension(:),allocatable :: ibelm_ymin_infinite,ibelm_ymax_infinite
+  integer, dimension(:),allocatable :: ibelm_bottom_infinite
+  integer, dimension(:),allocatable :: ibelm_top_infinite
 
   ! inner / outer elements outer core region
   integer :: num_phase_ispec_infinite
@@ -1507,17 +1464,6 @@ module specfem_par_infinite
   ! mesh coloring
   integer :: num_colors_outer_infinite,num_colors_inner_infinite
   integer,dimension(:),allocatable :: num_elem_colors_infinite
-
-  ! parameters for Poisson's solver
-  integer,dimension(:,:),allocatable :: inode_elmt_inf    ! inode_elmt_inf(NGLLCUBE,NSPEC_INFINITE)
-  integer,dimension(:,:),allocatable :: inode_elmt_inf1   ! inode_elmt_inf1(NGLLCUBE_INF,NSPEC_INFINITE)
-  integer,dimension(:),allocatable :: gdof_inf, gdof_inf1
-  integer,dimension(:,:),allocatable :: ggdof_inf, ggdof_inf1
-
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_infinite
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_infinite
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable :: storekmat_infinite1
-  real(kind=CUSTOM_REAL),dimension(:),allocatable :: dprecon_infinite1
 
 end module specfem_par_infinite
 
