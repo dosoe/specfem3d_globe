@@ -742,7 +742,6 @@
     TRANSVERSE_ISOTROPY = .true.
     MODEL_3D_MANTLE_PERTUBATIONS = .true.
     THREE_D_MODEL = THREE_D_MODEL_BERKELEY
-    ! REFERENCE_CRUSTAL_MODEL = ICRUST_BERKELEY
   
   case('prem_a3d_test') 
     ! Model discontinutities for PREM anisotropic no_ocean 
@@ -756,7 +755,6 @@
     TRANSVERSE_ISOTROPY = .true.
     MODEL_3D_MANTLE_PERTUBATIONS = .true.
     THREE_D_MODEL = THREE_D_MODEL_BERKELEY
-    REFERENCE_CRUSTAL_MODEL = ICRUST_BERKELEY
 
 #ifdef USE_CEM
   case ('cem_request')
