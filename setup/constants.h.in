@@ -71,8 +71,8 @@ logical, parameter :: SAVE_MIRRORS = .false.
 ! ********************************************************************************************************
 ! Path to A3d model (only if MODEL == PREM_A3d_1Dcrust or SEMUCB_A3d    )
 ! Make sure this line ends on "/"
-! character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/"
-character (len=*), parameter :: A3d_folder = "DATA/SEMUCB_A3d/"
+character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/"
+! character (len=*), parameter :: A3d_folder = "DATA/SEMUCB_A3d/"
 !*********************************************************************************************************
 
 ! maximum length of strings used for paths, reading from files, etc.
