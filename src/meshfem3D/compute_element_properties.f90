@@ -46,7 +46,7 @@
     THREE_D_MODEL,THREE_D_MODEL_MANTLE_SH,THREE_D_MODEL_S29EA, &
     THREE_D_MODEL_S362ANI,THREE_D_MODEL_S362WMANI,THREE_D_MODEL_S362ANI_PREM, &
     THREE_D_MODEL_BKMNS_GLAD,THREE_D_MODEL_SPIRAL,THREE_D_MODEL_BERKELEY, &
-    ibathy_topo,nspl,rspl,ellipicity_spline,ellipicity_spline2, &
+    ibathy_topo,nspl_ellip,rspl_ellip,ellipicity_spline,ellipicity_spline2, &
     REGIONAL_MOHO_MESH 
 
   ! ellipticity
