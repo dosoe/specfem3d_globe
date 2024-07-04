@@ -756,6 +756,15 @@
     MODEL_3D_MANTLE_PERTUBATIONS = .true.
     THREE_D_MODEL = THREE_D_MODEL_BERKELEY
 
+  case('prem_a3d_test_crust') 
+    CASE_3D = .false.
+    CRUSTAL = .true.
+    ONE_CRUST = .true.
+    REFERENCE_1D_MODEL = REFERENCE_MODEL_SEMUCB
+    TRANSVERSE_ISOTROPY = .true.
+    MODEL_3D_MANTLE_PERTUBATIONS = .true.
+    THREE_D_MODEL = THREE_D_MODEL_BERKELEY
+
 #ifdef USE_CEM
   case ('cem_request')
     CEM_REQUEST         = .true.
