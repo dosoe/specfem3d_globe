@@ -85,9 +85,9 @@ character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/
 ! I/O unit for file input,output
   integer, parameter :: IIN = 40,IOUT = 41
 ! uncomment this to write messages to a text file
-! integer, parameter :: IMAIN = 42
+  integer, parameter :: IMAIN = 42
 ! uncomment this to write messages to the screen (slows down the code)
-  integer, parameter :: IMAIN = ISTANDARD_OUTPUT
+! integer, parameter :: IMAIN = ISTANDARD_OUTPUT
 
 ! I/O unit for noise data files
   integer, parameter :: IIN_NOISE = 43,IOUT_NOISE = 44
