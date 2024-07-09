@@ -1348,9 +1348,9 @@
     rho = rhoc
     eta_aniso = etac
 
-    if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY)THEN
-      call model_berkeley_crust_aniso(lat,lon,r,vpv,vph,vsv,vsh,eta_aniso,rho,moho)
-    endif
+    ! if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY)THEN
+    !   call model_berkeley_crust_aniso(lat,lon,r,vpv,vph,vsv,vsh,eta_aniso,rho,moho)
+    ! endif
 
     ! sets anisotropy in crustal region as well
     if (ANISOTROPIC_3D_MANTLE .and. iregion_code == IREGION_CRUST_MANTLE) then
@@ -1607,10 +1607,14 @@
     case (ICRUST_BERKELEY)
      ! general crustmaps
       call model_berkeley_crust(lat,lon,r,vpc,vsc,rhoc,moho)
+      if (moho_only) return
       vpvc = vpc
       vphc = vpc
       vsvc = vsc
       vshc = vsc
+
+      call model_berkeley_crust_aniso(lat,lon,r,vpvc,vphc,vsvc,vshc,etac,rhoc,moho)
+      
       found_crust = .true.
 
     case default

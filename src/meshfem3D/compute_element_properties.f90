@@ -499,6 +499,11 @@
   ! initializes
   elem_is_tiso = .false.
 
+  if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY.and.elem_in_crust) then
+    elem_is_tiso=.true.
+    return
+  endif
+
   ! checks if anything to do
   if (.not. TRANSVERSE_ISOTROPY) return
   if (iregion_code /= IREGION_CRUST_MANTLE) return
@@ -605,7 +610,7 @@
 
   end select
 
-  if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY.and.elem_in_crust)elem_is_tiso=.true.
+  ! if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY.and.elem_in_crust)elem_is_tiso=.true.
 
   !debug
   !if (myrank == 0) print *,'  element ',ispec,' tiso flag: ',elem_is_tiso
