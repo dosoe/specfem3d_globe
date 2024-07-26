@@ -36,7 +36,7 @@
     NGLLX,NGLLY,NGLLZ,MIDX,MIDY,MIDZ,N_SLS,CUSTOM_REAL, &
     TINYVAL,PI, &
     IREGION_CRUST_MANTLE,IREGION_INNER_CORE,IREGION_OUTER_CORE, &
-    myrank
+    myrank, PI_OVER_TWO
 
   use shared_parameters, only: R_PLANET_KM,MODEL_GLL,ADD_SCATTERING_PERTURBATIONS
 
@@ -87,6 +87,8 @@
 
   double precision :: r,r_prem,moho,sediment
   double precision :: theta,phi
+
+  double precision :: r_test,phi_test,theta_test
 
   integer :: i,j,k,i_sls
 
@@ -202,12 +204,32 @@
         ! gets the 3-D crustal model
         ! M.A. don't overwrite crust if using CEM.
         if (CRUSTAL .and. .not. CEM_ACCEPT) then
-          if (.not. elem_in_mantle) &
+          if (.not. elem_in_mantle) then
+            ! call xyz_2_rthetaphi_dble(0.d0,0.d0,1.d0,r_test,theta_test,phi_test)
+            ! call meshfem3D_models_get3Dcrust_val(IREGION_CRUST_MANTLE,r_test,theta_test,phi_test, &
+            !                                                   vpv,vph,vsv,vsh,rho,eta_aniso, &
+            !                                                   c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+            !                                                   c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+            !                                                   elem_in_crust,moho,sediment)
+            ! print *,'x=0,y=0,z=1,vpv=',vpv
+
+            ! call xyz_2_rthetaphi_dble(1.d0,0.d0,0.d0,r_test,theta_test,phi_test)
+            ! call meshfem3D_models_get3Dcrust_val(IREGION_CRUST_MANTLE,r_test,theta_test,phi_test, &
+            !                                                   vpv,vph,vsv,vsh,rho,eta_aniso, &
+            !                                                   c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+            !                                                   c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+            !                                                   elem_in_crust,moho,sediment)
+            ! print *,'x=1,y=0,z=0,vpv=',vpv
             call meshfem3D_models_get3Dcrust_val(iregion_code,r,theta,phi, &
                                                  vpv,vph,vsv,vsh,rho,eta_aniso, &
                                                  c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
                                                  c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
                                                  elem_in_crust,moho,sediment)
+          endif
+          ! if(elem_in_crust)then
+          !   Qmu=300.0d0
+          !   Qkappa=57822.5d0 !  not used so far...
+          ! endif
         endif
 
         ! overwrites with tomographic model values (from iteration step) here, given at all GLL points
