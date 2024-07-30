@@ -953,10 +953,6 @@
             dvsh = 0.d0
           endif
 
-          if (dvpv/=0.) then
-            print *,'non-zero perturbationm problem, dvpv=',dvpv
-          endif
-
           if(TRANSVERSE_ISOTROPY) then
             vpv=vpv*(1.0d0+dble(dvpv))
             vph=vph*(1.0d0+dble(dvph))
@@ -978,6 +974,10 @@
             vsh=vs
             eta_aniso=1.0d0
             rho=rho*(1.0d0+drho)
+          endif
+
+          if (dvpv/=0.) then
+            print *,'non-zero perturbation problem, dvpv=',dvpv,'dvph=',dvph,'dvsv=',dvsv,'dvsh=',dvsh
           endif
 
         case (THREE_D_MODEL_HETEROGEN_PREM)

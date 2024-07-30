@@ -36,7 +36,7 @@
     NGLLX,NGLLY,NGLLZ,MIDX,MIDY,MIDZ,N_SLS,CUSTOM_REAL, &
     TINYVAL,PI, &
     IREGION_CRUST_MANTLE,IREGION_INNER_CORE,IREGION_OUTER_CORE, &
-    myrank, PI_OVER_TWO
+    myrank, PI_OVER_TWO,SIZE_REAL,SIZE_DOUBLE
 
   use shared_parameters, only: R_PLANET_KM,MODEL_GLL,ADD_SCATTERING_PERTURBATIONS
 
@@ -274,6 +274,12 @@
         muvstore(i,j,k,ispec) = real(rho*vsv*vsv, kind=CUSTOM_REAL)
         muhstore(i,j,k,ispec) = real(rho*vsh*vsh, kind=CUSTOM_REAL)
         eta_anisostore(i,j,k,ispec) = real(eta_aniso, kind=CUSTOM_REAL)
+
+        ! if (CRUSTAL .and. .not. elem_in_mantle) then
+        print *,'r',r,'rho',rhostore(i,j,k,ispec),'kappav',kappavstore(i,j,k,ispec),&
+        'kappah',kappahstore(i,j,k,ispec),'muv',muvstore(i,j,k,ispec),&
+        'muh',muhstore(i,j,k,ispec),'eta_aniso',eta_anisostore(i,j,k,ispec)
+        ! endif
 
         if (ABSORBING_CONDITIONS) then
           if (iregion_code == IREGION_OUTER_CORE) then
