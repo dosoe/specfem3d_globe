@@ -276,9 +276,10 @@
         eta_anisostore(i,j,k,ispec) = real(eta_aniso, kind=CUSTOM_REAL)
 
         ! if (CRUSTAL .and. .not. elem_in_mantle) then
-        print *,'r',r,'rho',rhostore(i,j,k,ispec),'kappav',kappavstore(i,j,k,ispec),&
-        'kappah',kappahstore(i,j,k,ispec),'muv',muvstore(i,j,k,ispec),&
-        'muh',muhstore(i,j,k,ispec),'eta_aniso',eta_anisostore(i,j,k,ispec)
+        ! print *,'r',r,'theta',theta,'phi',phi,'rho',rhostore(i,j,k,ispec),&
+        ! 'kappav',kappavstore(i,j,k,ispec),&
+        ! 'kappah',kappahstore(i,j,k,ispec),'muv',muvstore(i,j,k,ispec),&
+        ! 'muh',muhstore(i,j,k,ispec),'eta_aniso',eta_anisostore(i,j,k,ispec)
         ! endif
 
         if (ABSORBING_CONDITIONS) then
