@@ -953,6 +953,13 @@
             dvsh = 0.d0
           endif
 
+          ! dvpv = 0.d0
+          ! dvph = 0.d0
+          ! dvsv = 0.d0
+          ! dvsh = 0.d0
+          ! drho = 0.d0
+          ! eta_aniso = 1.d0
+
           if(TRANSVERSE_ISOTROPY) then
             vpv=vpv*(1.0d0+dble(dvpv))
             vph=vph*(1.0d0+dble(dvph))
@@ -1269,8 +1276,9 @@
 
 ! returns velocities and density for points in 3D crustal region
 
-  use shared_parameters, only: ELLIPTICITY
+  use shared_parameters, only: ELLIPTICITY, RHOAV
   use meshfem_models_par
+  use constants,only: EARTH_R, EARTH_R_KM, ONE, PI, GRAV
 
   implicit none
 
@@ -1295,6 +1303,7 @@
                       c33c,c34c,c35c,c36c,c44c,c45c,c46c,c55c,c56c,c66c
   double precision :: A,C,L,N,F
   double precision :: dvs,dvp
+  double precision :: scaleval
   logical :: found_crust,is_inside_region,moho_only
 
   ! checks if anything to do, that is, there is nothing to do
@@ -1351,6 +1360,20 @@
     vsh = vshc
     rho = rhoc
     eta_aniso = etac
+
+    ! scaleval = ONE / ( EARTH_R * dsqrt(PI*GRAV*RHOAV) )
+    ! vpv=dble(5800)
+    ! vpv=vpv/scaleval
+    ! vph=dble(5800)
+    ! vph=vph/scaleval
+    ! vsv=dble(3200)
+    ! vsv=vsv/scaleval
+    ! vsh=dble(3200)
+    ! vsh=vsh/scaleval
+    ! eta_aniso=dble(1.0)
+    ! rho=dble(2600)
+    ! rho=rho/RHOAV
+    ! moho=dble(30)/EARTH_R_KM
 
     ! if(THREE_D_MODEL==THREE_D_MODEL_BERKELEY)THEN
     !   call model_berkeley_crust_aniso(lat,lon,r,vpv,vph,vsv,vsh,eta_aniso,rho,moho)
