@@ -603,6 +603,8 @@
 
     ! note: THREE_D_MODEL_SGLOBE_ISO
     !       sgloberani_iso model based on PREM, it will have tiso already set from crust down to 220
+  case(THREE_D_MODEL_BERKELEY)
+    if (elem_in_crust) elem_is_tiso=.true.
 
   case default
     ! nothing special to add
