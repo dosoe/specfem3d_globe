@@ -41,6 +41,25 @@
   ! sets radius for each discontinuity and ocean density values
   call get_model_parameters_radii()
 
+  print *,'ROCEAN',ROCEAN
+  print *,'RMIDDLE_CRUST',RMIDDLE_CRUST
+  print *,'RMOHO',RMOHO
+  print *,'R80',R80
+  print *,'R120',R120
+  print *,'R220',R220
+  print *,'R400',R400 
+  print *,'R600',R600 
+  print *,'R670',R670 
+  print *,'R771',R771 
+  print *,'RTOPDDOUBLEPRIME',RTOPDDOUBLEPRIME 
+  print *,'RCMB',RCMB 
+  print *,'RICB',RICB 
+  print *,'RHO_TOP_OC',RHO_TOP_OC 
+  print *,'RHO_BOTTOM_OC',RHO_BOTTOM_OC 
+
+  print *,'RMOHO_FICTITIOUS_IN_MESHER',RMOHO_FICTITIOUS_IN_MESHER 
+  print *,'R80_FICTITIOUS_IN_MESHER',R80_FICTITIOUS_IN_MESHER 
+
   end subroutine get_model_parameters
 
 
@@ -756,15 +775,6 @@
     MODEL_3D_MANTLE_PERTUBATIONS = .true.
     THREE_D_MODEL = THREE_D_MODEL_BERKELEY
 
-  case('prem_a3d_test_crust') 
-    CASE_3D = .false.
-    CRUSTAL = .true.
-    ONE_CRUST = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_SEMUCB
-    TRANSVERSE_ISOTROPY = .true.
-    MODEL_3D_MANTLE_PERTUBATIONS = .true.
-    THREE_D_MODEL = THREE_D_MODEL_BERKELEY
-
 #ifdef USE_CEM
   case ('cem_request')
     CEM_REQUEST         = .true.
@@ -976,6 +986,9 @@
     if (MODEL_L == 'prem_a3d_1dcrust') then
       ! Added <FM> Feb 2022
       HONOR_1D_SPHERICAL_MOHO = .false.
+    else if (MODEL_L == 'prem_a3d_test_1dcrust') then
+      ! Added <FM> Feb 2022
+      HONOR_1D_SPHERICAL_MOHO = .false.
     else
       HONOR_1D_SPHERICAL_MOHO = .true.
     endif
@@ -1046,28 +1059,28 @@
        REFERENCE_1D_MODEL == REFERENCE_MODEL_MOON_MEENA) .and. TRANSVERSE_ISOTROPY) &
     stop 'models vpremoon, moon_meena are currently isotropic'
   
-  print *,""
-  print *,"printing model parameter flags"
-  print *,'MODEL',MODEL
-  print *,'MODEL_L',MODEL_L
-  print *,'MODEL_NAME',MODEL_NAME
-  print *,'REFERENCE_1D_MODEL',REFERENCE_1D_MODEL
-  print *,"REFERENCE_CRUSTAL_MODEL (ITYPE_CRUSTAL_MODEL)",REFERENCE_CRUSTAL_MODEL
-  print *,"THREE_D_MODEL",THREE_D_MODEL
-  print *,"THREE_D_MODEL_IC",THREE_D_MODEL_IC
-  print *,"MODEL_GLL",MODEL_GLL
-  print *,"MODEL_GLL_TYPE",MODEL_GLL_TYPE
-  print *,"ANISOTROPIC_3D_MANTLE",ANISOTROPIC_3D_MANTLE
-  print *,"ANISOTROPIC_INNER_CORE",ANISOTROPIC_INNER_CORE
-  print *,"ATTENUATION_3D",ATTENUATION_3D
-  print *,"ATTENUATION_GLL",ATTENUATION_GLL
-  print *,'CASE_3D',CASE_3D
-  print *,"CRUSTAL",CRUSTAL
-  print *,"HETEROGEN_3D_MANTLE",HETEROGEN_3D_MANTLE
-  print *,"HONOR_1D_SPHERICAL_MOHO",HONOR_1D_SPHERICAL_MOHO
-  print *,"MODEL_3D_MANTLE_PERTUBATIONS (ISOTROPIC_3D_MANTLE)",MODEL_3D_MANTLE_PERTUBATIONS
-  print *,'ONE_CRUST',ONE_CRUST
-  print *,"TRANSVERSE_ISOTROPY",TRANSVERSE_ISOTROPY
+  ! print *,""
+  ! print *,"printing model parameter flags"
+  ! print *,'MODEL',MODEL
+  ! print *,'MODEL_L',MODEL_L
+  ! print *,'MODEL_NAME',MODEL_NAME
+  ! print *,'REFERENCE_1D_MODEL',REFERENCE_1D_MODEL
+  ! print *,"REFERENCE_CRUSTAL_MODEL (ITYPE_CRUSTAL_MODEL)",REFERENCE_CRUSTAL_MODEL
+  ! print *,"THREE_D_MODEL",THREE_D_MODEL
+  ! print *,"THREE_D_MODEL_IC",THREE_D_MODEL_IC
+  ! print *,"MODEL_GLL",MODEL_GLL
+  ! print *,"MODEL_GLL_TYPE",MODEL_GLL_TYPE
+  ! print *,"ANISOTROPIC_3D_MANTLE",ANISOTROPIC_3D_MANTLE
+  ! print *,"ANISOTROPIC_INNER_CORE",ANISOTROPIC_INNER_CORE
+  ! print *,"ATTENUATION_3D",ATTENUATION_3D
+  ! print *,"ATTENUATION_GLL",ATTENUATION_GLL
+  ! print *,'CASE_3D',CASE_3D
+  ! print *,"CRUSTAL",CRUSTAL
+  ! print *,"HETEROGEN_3D_MANTLE",HETEROGEN_3D_MANTLE
+  ! print *,"HONOR_1D_SPHERICAL_MOHO",HONOR_1D_SPHERICAL_MOHO
+  ! print *,"MODEL_3D_MANTLE_PERTUBATIONS (ISOTROPIC_3D_MANTLE)",MODEL_3D_MANTLE_PERTUBATIONS
+  ! print *,'ONE_CRUST',ONE_CRUST
+  ! print *,"TRANSVERSE_ISOTROPY",TRANSVERSE_ISOTROPY
 
   end subroutine get_model_parameters_flags
 
@@ -1235,7 +1248,7 @@
     RTOPDDOUBLEPRIME,RCMB,RICB, &
     RMOHO_FICTITIOUS_IN_MESHER,R80_FICTITIOUS_IN_MESHER, &
     R80_STRETCH_ADJUSTMENT,RMOHO_STRETCH_ADJUSTMENT, &
-    RHO_TOP_OC,RHO_BOTTOM_OC,RHO_OCEANS
+    RHO_TOP_OC,RHO_BOTTOM_OC,RHO_OCEANS,MODEL_NAME
 
   use shared_parameters, only: &
     HONOR_1D_SPHERICAL_MOHO,CASE_3D,CRUSTAL,REFERENCE_1D_MODEL
@@ -1577,24 +1590,6 @@
     RHO_TOP_OC    = 5171.d0 / MOON_RHOAV    ! densities fluid outer core (from VPREMOON)
     RHO_BOTTOM_OC = 7268.2d0 / MOON_RHOAV
   
-  case (REFERENCE_MODEL_SEMUCB)
-    ! Added <FM> Feb 2022
-    ! Berkeley SEMUCB Model - discontinuities
-    ROCEAN = 6368000.d0
-    RMIDDLE_CRUST = 6356000.d0
-    RMOHO = 6341000.d0
-    R80  = 6291000.d0
-    R120 = -1.d0   ! by default there is no d120 discontinuity, except in IASP91, therefore set to fictitious value
-    R220 = 6151000.d0
-    R400 = 5961000.d0
-    R600 = 5771000.d0
-    R670 = 5721000.d0
-    R771 = 5600000.d0
-    RTOPDDOUBLEPRIME = 3630000.d0
-    RCMB = 3480000.d0
-    RICB = 1221500.d0
-    RHO_TOP_OC = 9903.4384 / RHOAV
-    RHO_BOTTOM_OC = 12166.5885 / RHOAV
   case (REFERENCE_MODEL_PREM_A3D)
     ! ------ LAYERED PREM DISCONTINUITIES --------
     ! Only for debugging purposes
@@ -1611,6 +1606,24 @@
     RTOPDDOUBLEPRIME = 3630000.d0
     RCMB = 3480000.d0
     RICB = 1221000.d0
+    RHO_TOP_OC = 9903.4384 / RHOAV
+    RHO_BOTTOM_OC = 12166.5885 / RHOAV
+  case (REFERENCE_MODEL_SEMUCB)
+    ! Added <FM> Feb 2022
+    ! Berkeley SEMUCB Model - discontinuities
+    ROCEAN = 6368000.d0
+    RMIDDLE_CRUST = 6356000.d0
+    RMOHO = 6341000.d0
+    R80  = 6291000.d0
+    R120 = -1.d0   ! by default there is no d120 discontinuity, except in IASP91, therefore set to fictitious value
+    R220 = 6151000.d0
+    R400 = 5961000.d0
+    R600 = 5771000.d0
+    R670 = 5721000.d0
+    R771 = 5600000.d0
+    RTOPDDOUBLEPRIME = 3630000.d0
+    RCMB = 3480000.d0
+    RICB = 1221500.d0
     RHO_TOP_OC = 9903.4384 / RHOAV
     RHO_BOTTOM_OC = 12166.5885 / RHOAV
 
@@ -1658,14 +1671,15 @@
       RMOHO_FICTITIOUS_IN_MESHER = RMOHO_FICTITIOUS_IN_MESHER + RMOHO_STRETCH_ADJUSTMENT
       R80_FICTITIOUS_IN_MESHER = R80_FICTITIOUS_IN_MESHER + R80_STRETCH_ADJUSTMENT
     endif
-    if(REFERENCE_1D_MODEL == REFERENCE_MODEL_SEMUCB) then
-      ! FOR SEMUCB
-      RMOHO_FICTITIOUS_IN_MESHER = R_PLANET-29000.000
-      R80_FICTITIOUS_IN_MESHER = R_PLANET-130000.000
-    else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM_A3D) then
+    
+    if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM_A3D) then
       ! PREM LAYERED 1D Crust (only for debugging purposes)
       RMOHO_FICTITIOUS_IN_MESHER = RMOHO
       R80_FICTITIOUS_IN_MESHER = R80
+    else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_SEMUCB) then
+      ! FOR SEMUCB
+      RMOHO_FICTITIOUS_IN_MESHER = R_PLANET-29000.000
+      R80_FICTITIOUS_IN_MESHER = R_PLANET-130000.000
     endif
   endif
 
