@@ -46,7 +46,7 @@
     THREE_D_MODEL,THREE_D_MODEL_MANTLE_SH,THREE_D_MODEL_S29EA, &
     THREE_D_MODEL_S362ANI,THREE_D_MODEL_S362WMANI,THREE_D_MODEL_S362ANI_PREM, &
     THREE_D_MODEL_BKMNS_GLAD,THREE_D_MODEL_SPIRAL,THREE_D_MODEL_BERKELEY, &
-    ibathy_topo,nspl_ellip,rspl_ellip,ellipicity_spline,ellipicity_spline2, &
+    ibathy_topo, &
     REGIONAL_MOHO_MESH 
 
   ! ellipticity
@@ -534,6 +534,9 @@
       elem_is_tiso = .true.
     endif
 
+    if ( elem_in_mantle ) then
+      elem_is_tiso = .true.
+    endif
     ! all done
     return
   endif
@@ -603,8 +606,6 @@
 
     ! note: THREE_D_MODEL_SGLOBE_ISO
     !       sgloberani_iso model based on PREM, it will have tiso already set from crust down to 220
-  case(THREE_D_MODEL_BERKELEY)
-    if (elem_in_crust) elem_is_tiso=.true.
 
   case default
     ! nothing special to add
