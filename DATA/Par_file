@@ -64,8 +64,8 @@ NPROC_ETA                       = 7
 #                          e.g. s20rts_1Dcrust, s362ani_1Dcrust, etc.
 #
 # MODEL                           = semucb_a3d_brk
-# MODEL                           = prem_a3d_test_1dcrust
-MODEL                           = 1D_transversely_isotropic_prem_onecrust
+MODEL                           = prem_a3d_test_1dcrust
+# MODEL                           = 1D_transversely_isotropic_prem_onecrust
 
 # parameters describing the Earth model
 OCEANS                          = .false.
@@ -73,7 +73,7 @@ ELLIPTICITY                     = .false.
 TOPOGRAPHY                      = .false.
 GRAVITY                         = .false.
 ROTATION                        = .false.
-ATTENUATION                     = .true.
+ATTENUATION                     = .false.
 
 # full gravity calculation by solving Poisson's equation for gravity potential instead of using a Cowling approximation
 # (must have also GRAVITY flag set to .true. to become active)
