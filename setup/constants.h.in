@@ -25,7 +25,7 @@
 !
 !=====================================================================
 
-! @configure_input@
+! setup/constants.h.  Generated from constants.h.in by configure.
 
 !
 !--- user can modify parameters below
@@ -44,7 +44,7 @@
 
 ! set to SIZE_REAL to run in single precision
 ! set to SIZE_DOUBLE to run in double precision (increases memory size by 2)
-  integer, parameter :: CUSTOM_REAL = @CUSTOM_REAL@
+  integer, parameter :: CUSTOM_REAL = SIZE_REAL
 
 !*********************************************************************************************************
 
@@ -62,7 +62,7 @@
 ! to local files in create_serial_name_database.f90 ("20 format ...")
 ! Flag is used only when one checks the mesh with the serial codes
 ! ("xcheck_buffers_1D" etc.), ignore it if you do not plan to use them
-  logical, parameter :: LOCAL_PATH_IS_ALSO_GLOBAL = .@LOCAL_PATH_IS_ALSO_GLOBAL@.
+  logical, parameter :: LOCAL_PATH_IS_ALSO_GLOBAL = .true.
 
 ! ********************************************************************************************************   
 ! Save mirror files
@@ -71,8 +71,8 @@ logical, parameter :: SAVE_MIRRORS = .false.
 ! ********************************************************************************************************
 ! Path to A3d model (only if MODEL == PREM_A3d_1Dcrust or SEMUCB_A3d    )
 ! Make sure this line ends on "/"
-character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/"
-! character (len=*), parameter :: A3d_folder = "DATA/SEMUCB_A3d/"
+! character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/"
+character (len=*), parameter :: A3d_folder = "DATA/SEMUCB_A3d/"
 !*********************************************************************************************************
 
 ! maximum length of strings used for paths, reading from files, etc.
@@ -87,7 +87,7 @@ character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/
 ! uncomment this to write messages to a text file
   integer, parameter :: IMAIN = 42
 ! uncomment this to write messages to the screen (slows down the code)
-! integer, parameter :: IMAIN = ISTANDARD_OUTPUT
+!  integer, parameter :: IMAIN = ISTANDARD_OUTPUT
 
 ! I/O unit for noise data files
   integer, parameter :: IIN_NOISE = 43,IOUT_NOISE = 44
@@ -213,8 +213,8 @@ character (len=*), parameter :: A3d_folder = "DATA/PREM_aniso_noocean_A3d.zeros/
 ! the code will print an error message and stop if it finds that the topography input file
 ! contains values outside this range.
 ! we take a safety margin just in case of a smoothed or modified model, which can locally create slightly different values
-  integer, parameter :: EARTH_TOPO_MINIMUM = - 11200 ! (max depth in m, Mariana trench)
-  integer, parameter :: EARTH_TOPO_MAXIMUM = + 9000 ! (height in m, Mount Everest)
+  integer, parameter :: EARTH_TOPO_MINIMUM = - 20000 ! (max depth in m, Mariana trench)
+  integer, parameter :: EARTH_TOPO_MAXIMUM = + 20000 ! (height in m, Mount Everest)
 
 ! minimum thickness in meters to include the effect of the oceans and topo
   double precision, parameter :: MINIMUM_THICKNESS_3D_OCEANS = 100.d0
@@ -340,7 +340,7 @@ character(len=*), parameter :: IN_DATA_FILES = './DATA/'
 
 ! in the case of 1D attenuation models, use NGLL^3 storage of the attenuation constants in each GLL spectral element anyway
 ! (always safe to leave that to true; in the case of 1D attenuation models, setting it to false can save some memory storage)
-  logical, parameter :: ATTENUATION_1D_WITH_3D_STORAGE  = .true.
+  logical, parameter :: ATTENUATION_1D_WITH_3D_STORAGE  = .false.
 
 !!-----------------------------------------------------------
 !!

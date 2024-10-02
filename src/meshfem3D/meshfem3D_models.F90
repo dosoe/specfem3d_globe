@@ -939,6 +939,7 @@
           call model_berkeley_shsv(dble(r_used*EARTH_R_KM),theta,phi,dvsh,dvsv, &
                                         dvph,dvpv,drho,eta_aniso,iregion_code,CRUSTAL)
 
+          ! print *,'r',r_used,'theta',theta,'phi',phi,dvsh,dvsv,dvph,dvpv
           !
           ! call model_prem_iso(myrank,r_prem,rho,drhodr,vp,vs,Qkappa,&
           !      Qmu,idoubling,CRUSTAL, ONE_CRUST,.true.,RICB,RCMB, &
@@ -983,9 +984,11 @@
             rho=rho*(1.0d0+drho)
           endif
 
-          if (dvpv/=0.) then
-            print *,'non-zero perturbation problem, dvpv=',dvpv,'dvph=',dvph,'dvsv=',dvsv,'dvsh=',dvsh
-          endif
+          ! if (dvpv/=0.) then
+          !   print *,'non-zero perturbation problem, dvpv=',dvpv,'dvph=',dvph,'dvsv=',dvsv,'dvsh=',dvsh
+          ! endif
+
+          print *,'r',r_used,'theta',theta,'phi',phi,'in meshfem3D_models_mantle',vpv,vph,vsv,vsh,rho
 
         case (THREE_D_MODEL_HETEROGEN_PREM)
           ! chris modif checkers 02/20/21
@@ -1449,6 +1452,8 @@
     endif
   endif
 
+  print *,'r',r,'theta',theta,'phi',phi,'in meshfem3D_models_crust',vpv,vph,vsv,vsh,rho
+
   end subroutine meshfem3D_models_get3Dcrust_val
 
 !
@@ -1643,6 +1648,7 @@
       stop 'crustal model type not defined'
 
   end select
+
 
 
   end subroutine meshfem3D_model_crust

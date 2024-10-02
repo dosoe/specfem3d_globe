@@ -77,6 +77,12 @@
                       c34,c35,c36,c44,c45,c46,c55,c56,c66
   ! azimuthal
   double precision :: A,C,L,N,F,Gc,Gs,Gc_prime,Gs_prime,mu0
+  real(kind=CUSTOM_REAL) :: rhostore_test,&
+              kappavstore_test,&
+              kappahstore_test,&
+              muvstore_test,&
+              muhstore_test,&
+              eta_anisostore_test
 
   double precision :: Qkappa,Qmu
   double precision, dimension(N_SLS) :: tau_e,tau_s
@@ -226,10 +232,10 @@
                                                  c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
                                                  elem_in_crust,moho,sediment)
           endif
-          ! if(elem_in_crust)then
-          !   Qmu=300.0d0
-          !   Qkappa=57822.5d0 !  not used so far...
-          ! endif
+          if(elem_in_crust)then
+            Qmu=300.0d0
+            Qkappa=57822.5d0 !  not used so far...
+          endif
         endif
 
         ! overwrites with tomographic model values (from iteration step) here, given at all GLL points
@@ -371,6 +377,183 @@
       enddo
     enddo
   enddo
+
+
+
+  ! initializes values
+  rho = 0.d0
+  vpv = 0.d0
+  vph = 0.d0
+  vsv = 0.d0
+  vsh = 0.d0
+
+  eta_aniso = 1.d0 ! default for isotropic element
+
+  c11 = 0.d0
+  c12 = 0.d0
+  c13 = 0.d0
+  c14 = 0.d0
+  c15 = 0.d0
+  c16 = 0.d0
+  c22 = 0.d0
+  c23 = 0.d0
+  c24 = 0.d0
+  c25 = 0.d0
+  c26 = 0.d0
+  c33 = 0.d0
+  c34 = 0.d0
+  c35 = 0.d0
+  c36 = 0.d0
+  c44 = 0.d0
+  c45 = 0.d0
+  c46 = 0.d0
+  c55 = 0.d0
+  c56 = 0.d0
+  c66 = 0.d0
+
+  mu0 = 0.d0
+  Gc = 0.d0
+  Gs = 0.d0
+  Gc_prime = 0.d0
+  Gs_prime = 0.d0
+
+  Qmu = 0.d0
+  Qkappa = 0.d0 ! not used, not stored so far...
+  tau_e(:) = 0.d0
+  tau_s(:) = tau_s_store(:)
+
+  ! sets xyz coordinates of GLL point
+  xmesh = 0.99
+  ymesh = 0
+  zmesh = 0
+
+  ! gets point's (geocentric) position theta/phi, and exact point location radius
+  call xyz_2_rthetaphi_dble(xmesh,ymesh,zmesh,r,theta,phi)
+
+  ! puts theta in range [0,PI] / phi in range [0,2PI]
+  call reduce(theta,phi)
+
+  ! make sure we are within the right shell in PREM to honor discontinuities
+  ! use small geometrical tolerance
+  r_prem = r
+  if (r <= rmin*1.000001d0) r_prem = rmin*1.000001d0
+  if (r >= rmax*0.999999d0) r_prem = rmax*0.999999d0
+
+  ! checks r_prem,rmin/rmax and assigned idoubling
+  call get_model_check_idoubling(r_prem,theta,phi,rmin,rmax,idoubling, &
+                                  RICB,RCMB,RTOPDDOUBLEPRIME, &
+                                  R220,R670)
+
+  ! gets reference model values: rho,vpv,vph,vsv,vsh and eta_aniso
+  call meshfem3D_models_get1D_val(iregion_code,idoubling, &
+                                  r_prem,rho,vpv,vph,vsv,vsh,eta_aniso, &
+                                  Qkappa,Qmu,RICB,RCMB, &
+                                  RTOPDDOUBLEPRIME,R80,R120,R220,R400,R670,R771, &
+                                  RMOHO,RMIDDLE_CRUST)
+
+  ! stores isotropic shear modulus from reference 1D model
+  ! calculates isotropic value
+  if (iregion_code == IREGION_OUTER_CORE) then
+    ! fluid with zero shear speed
+    vs = 0.d0
+  else
+    vs = sqrt(((1.d0-2.d0*eta_aniso)*vph*vph + vpv*vpv &
+              + 5.d0*vsh*vsh + (6.d0+4.d0*eta_aniso)*vsv*vsv)/15.d0)
+  endif
+
+  ! stores 1D isotropic mu0 = (rho * Vs*Vs) values
+  mu0 = rho * vs*vs
+  ! mu0store(i,j,k,ispec) = real( mu0, kind=CUSTOM_REAL)
+
+  ! gets the 3-D model parameters for the mantle
+  call meshfem3D_models_get3Dmntl_val(iregion_code,r_prem,rho, &
+                                      vpv,vph,vsv,vsh,eta_aniso, &
+                                      RCMB,RMOHO, &
+                                      r,theta,phi, &
+                                      c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+                                      c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+                                      ispec,i,j,k)
+
+  ! gets the 3-D crustal model
+  ! M.A. don't overwrite crust if using CEM.
+  if (CRUSTAL .and. .not. CEM_ACCEPT) then
+    if (.not. elem_in_mantle) then
+      ! call xyz_2_rthetaphi_dble(0.d0,0.d0,1.d0,r_test,theta_test,phi_test)
+      ! call meshfem3D_models_get3Dcrust_val(IREGION_CRUST_MANTLE,r_test,theta_test,phi_test, &
+      !                                                   vpv,vph,vsv,vsh,rho,eta_aniso, &
+      !                                                   c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+      !                                                   c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+      !                                                   elem_in_crust,moho,sediment)
+      ! print *,'x=0,y=0,z=1,vpv=',vpv
+
+      ! call xyz_2_rthetaphi_dble(1.d0,0.d0,0.d0,r_test,theta_test,phi_test)
+      ! call meshfem3D_models_get3Dcrust_val(IREGION_CRUST_MANTLE,r_test,theta_test,phi_test, &
+      !                                                   vpv,vph,vsv,vsh,rho,eta_aniso, &
+      !                                                   c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+      !                                                   c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+      !                                                   elem_in_crust,moho,sediment)
+      ! print *,'x=1,y=0,z=0,vpv=',vpv
+      call meshfem3D_models_get3Dcrust_val(iregion_code,r,theta,phi, &
+                                            vpv,vph,vsv,vsh,rho,eta_aniso, &
+                                            c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+                                            c33,c34,c35,c36,c44,c45,c46,c55,c56,c66, &
+                                            elem_in_crust,moho,sediment)
+    endif
+    if(elem_in_crust)then
+      Qmu=300.0d0
+      Qkappa=57822.5d0 !  not used so far...
+    endif
+  endif
+
+  ! overwrites with tomographic model values (from iteration step) here, given at all GLL points
+  if (MODEL_GLL) then
+    call meshfem3D_models_impose_val(iregion_code,r,theta,phi,ispec,i,j,k, &
+                                      vpv,vph,vsv,vsh,rho,eta_aniso, &
+                                      c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+                                      c33,c34,c35,c36,c44,c45,c46,c55,c56,c66)
+  endif
+
+  ! adds scattering perturbations
+  if (ADD_SCATTERING_PERTURBATIONS) then
+    call model_scattering_add_perturbations(iregion_code,xmesh,ymesh,zmesh, &
+                                            vpv,vph,vsv,vsh,rho,eta_aniso, &
+                                            c11,c12,c13,c14,c15,c16,c22,c23,c24,c25,c26, &
+                                            c33,c34,c35,c36,c44,c45,c46,c55,c56,c66)
+  endif
+
+  ! checks vpv: if close to zero then there is probably an error
+  if (vpv < TINYVAL) then
+    print *,'Error vpv: ',vpv,' vph:',vph,' vsv: ',vsv,' vsh: ',vsh,' rho:',rho
+    print *,'radius:',r*R_PLANET_KM,' theta/phi: ',theta*180/PI,phi*180/PI
+    call exit_mpi(myrank,'Error get_model values')
+  endif
+
+  !> Hejun, New attenuation assignment
+  ! Define 3D and 1D attenuation after Moho stretch
+  ! and before TOPOGRAPHY / ELLIPTICITY
+  !
+  !note:  only Qmu attenuation considered, Qkappa attenuation not used so far...
+  if (ATTENUATION) then
+    call meshfem3D_models_getatten_val(idoubling,r_prem,theta,phi, &
+                                        ispec, i, j, k, &
+                                        tau_e,tau_s, &
+                                        moho,Qmu,Qkappa,elem_in_crust)
+  endif
+
+  ! define elastic parameters in the model
+  rhostore_test = real(rho, kind=CUSTOM_REAL)
+  kappavstore_test = real(rho*(vpv*vpv - 4.d0/3.d0*vsv*vsv), kind=CUSTOM_REAL)
+  kappahstore_test = real(rho*(vph*vph - 4.d0/3.d0*vsh*vsh), kind=CUSTOM_REAL)
+  muvstore_test = real(rho*vsv*vsv, kind=CUSTOM_REAL)
+  muhstore_test = real(rho*vsh*vsh, kind=CUSTOM_REAL)
+  eta_anisostore_test = real(eta_aniso, kind=CUSTOM_REAL)
+
+  ! if (elem_in_crust) then
+  print *,'r',r,'theta',theta,'phi',phi,'absolute values',&
+    rhostore_test,kappavstore_test,kappahstore_test,&
+    muvstore_test,muhstore_test,eta_anisostore_test
+  
+  ! endif
 
   end subroutine get_model
 

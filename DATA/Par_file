@@ -63,14 +63,14 @@ NPROC_ETA                       = 7
 #                          associated reference model rather than the default 3D crustal model
 #                          e.g. s20rts_1Dcrust, s362ani_1Dcrust, etc.
 #
-# MODEL                           = semucb_a3d_brk
-MODEL                           = prem_a3d_test_1dcrust
+MODEL                           = semucb_a3d_brk
+# MODEL                           = prem_a3d_test_1dcrust
 # MODEL                           = 1D_transversely_isotropic_prem_onecrust
 
 # parameters describing the Earth model
 OCEANS                          = .false.
-ELLIPTICITY                     = .false.
-TOPOGRAPHY                      = .false.
+ELLIPTICITY                     = .true.
+TOPOGRAPHY                      = .true.
 GRAVITY                         = .false.
 ROTATION                        = .false.
 ATTENUATION                     = .false.
