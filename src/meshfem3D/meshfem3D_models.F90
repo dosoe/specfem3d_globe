@@ -988,8 +988,6 @@
           !   print *,'non-zero perturbation problem, dvpv=',dvpv,'dvph=',dvph,'dvsv=',dvsv,'dvsh=',dvsh
           ! endif
 
-          print *,'r',r_used,'theta',theta,'phi',phi,'in meshfem3D_models_mantle',vpv,vph,vsv,vsh,rho
-
         case (THREE_D_MODEL_HETEROGEN_PREM)
           ! chris modif checkers 02/20/21
           call model_heterogen_mantle(ispec,i,j,k,r_prem,theta,phi,dvs,dvp,drho)
@@ -1451,8 +1449,6 @@
       endif
     endif
   endif
-
-  print *,'r',r,'theta',theta,'phi',phi,'in meshfem3D_models_crust',vpv,vph,vsv,vsh,rho
 
   end subroutine meshfem3D_models_get3Dcrust_val
 
