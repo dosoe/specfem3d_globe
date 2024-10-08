@@ -336,7 +336,7 @@ subroutine model_berkeley_shsv(r,theta,phi,dvsh,dvsv,dvph,dvpv,drho,eta_aniso,ir
     double precision, dimension(:), allocatable :: dh
     double precision :: rad2deg,getdel, spbsp
     double precision :: vsv,vsh,vpv,vph, drho,scaleval
-    real(kind=4) :: dvsv,dvsh,dvpv,dvph 
+    double precision :: dvsv,dvsh,dvpv,dvph 
     double precision :: aa1, bb1
     character (len=256) :: earth_model_file = trim(A3d_folder)//'model1D.dat'
 
