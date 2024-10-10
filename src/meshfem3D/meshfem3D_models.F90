@@ -1313,7 +1313,7 @@
 
   ! converts geocentric colatitude/lon (theta/phi) to geographic latitude/lon (lat/lon)
   ! lat/lon in degrees (range lat/lon = [-90,90] / [-180,180]
-  call thetaphi_2_geographic_latlon_dble(theta,phi,lat,lon,ELLIPTICITY)
+  call thetaphi_2_geographic_latlon_dble(theta,phi,lat,lon,.false.)
 
   ! double-check lon in range [-180,180]
   if (lon > 180.0d0 ) lon = lon - 360.0d0
